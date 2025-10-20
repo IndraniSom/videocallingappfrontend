@@ -78,9 +78,9 @@ const Abouts: React.FC = () => {
           {/* Center Column - Profile Image */}
           <div className="flex items-center justify-center order-first md:order-none">
             <div className="relative">
-              <div className="w-56 h-56 sm:w-64 sm:h-64 lg:w-80 lg:h-80 rounded-full bg-gradient-to-br from-pink-100 to-purple-100 overflow-hidden shadow-2xl">
+              <div className="w-56 h-56 sm:w-64 sm:h-64 lg:w-80 lg:h-80  overflow-hidden rounded-full">
                 <img
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"
+                  src="https://res.cloudinary.com/dhjzu51mb/image/upload/v1760272023/h3ox9ndkb4rqdmllrvsi.png"
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />

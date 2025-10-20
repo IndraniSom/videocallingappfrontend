@@ -27,12 +27,12 @@ const AnimatedHeroDemo = () => {
       tagline="Join over 100,000 happy creators"
       title={
         <>
-          Engage Audiences
+          Random Videochat
           <br />
-          with Stunning Videos
+          with Pretty Girls
         </>
       }
-      description="Boost Your Brand with High-Impact Short Videos from our expert content creators. Our team is ready to propel your business forward."
+      description="Find your perfect match today. Sign up now and start connecting with amazing people! Get your free account today."
       ctaText="Get Started"
       images={DEMO_IMAGES}
     />

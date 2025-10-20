@@ -34,9 +34,9 @@ export default function FAQs() {
 
     return (
         <section className="bg-white py-16 md:py-24">
-            <div className="mx-auto max-w-5xl px-4 md:px-6">
+            <div className="mx-auto max-w-7xl px-4 md:px-6">
                 <div>
-                    <h2 className="text-foreground text-4xl font-semibold">Frequently Asked Questions</h2>
+                    <h2 className="text-black text-4xl font-semibold">Frequently Asked Questions</h2>
                     <p className="text-black mt-4 text-balance text-lg">Discover quick and comprehensive answers to common questions about our platform, services, and features.</p>
                 </div>
 
@@ -44,7 +44,7 @@ export default function FAQs() {
                     <Accordion
                         type="single"
                         collapsible
-                        className="bg-card ring-foreground/5 rounded-(--radius) w-full text-black border border-transparent px-8 py-3 shadow ring-1">
+                        className=" w-full text-black  px-8 py-3 ">
                         {faqItems.map((item) => (
                             <AccordionItem
                                 key={item.id}

@@ -12,7 +12,7 @@ import {
   SkipForward,
   XCircle,
 } from "lucide-react";
-import { useVideoChat } from "@/hooks/useVideoChat";
+import { useAgoraChat } from "@/hooks/useAgoraChat";
 
 const BackgroundVideo = ({
   videoUrl,
@@ -40,29 +40,32 @@ const BackgroundVideo = ({
 
 const Dashboard: React.FC = () => {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const {
-    role,
-    stream,
-    remoteStream,
-    statusMessage,
-    isCamOn,
-    isMicOn,
-    chatMessages,
-    callDuration,
-    joinQueue,
-    toggleCamera,
-    toggleMic,
-    sendMessage,
-    endChat,
-    skipUser,
-    requestMediaAccess,
-  } = useVideoChat();
-
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const [chatInput, setChatInput] = useState("");
   const [inVideoChat, setInVideoChat] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [isCamOn, setCamOn] = useState(true);
+  const [isMicOn, setMicOn] = useState(true);
+  const [chatMessages, setChatMessages] = useState<
+    { from: string; text: string }[]
+  >([]);
+  const [role, setRole] = useState<string | null>(null);
+  const [callDuration, setCallDuration] = useState<number>(0);
+  const callTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // agora refs
+  const {
+    joinChannel,
+    leaveChannel,
+    toggleMic: agoraToggleMic,
+    toggleCamera: agoraToggleCamera,
+    remoteTracks,
+    localVideoTrack,
+    joinMatchQueue,
+  } = useAgoraChat();
+
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
   const videoUrls = [
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
@@ -70,6 +73,7 @@ const Dashboard: React.FC = () => {
     "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
   ];
 
+  // video carousel background
   useEffect(() => {
     const carouselTimer = setInterval(() => {
       setCurrentVideoIndex((prev) => (prev + 1) % videoUrls.length);
@@ -77,47 +81,84 @@ const Dashboard: React.FC = () => {
     return () => clearInterval(carouselTimer);
   }, [videoUrls.length]);
 
+  // play local Agora stream in <video>
   useEffect(() => {
-    if (localVideoRef.current && stream)
-      localVideoRef.current.srcObject = stream;
-  }, [stream]);
+    if (localVideoTrack && localVideoRef.current) {
+      localVideoTrack.play(localVideoRef.current);
+    }
+  }, [localVideoTrack]);
 
+  // play remote Agora stream
   useEffect(() => {
-    if (remoteVideoRef.current && remoteStream)
-      remoteVideoRef.current.srcObject = remoteStream;
-  }, [remoteStream]);
+    if (remoteTracks.video && remoteVideoRef.current) {
+      remoteTracks.video.play(remoteVideoRef.current);
+    }
+  }, [remoteTracks.video]);
 
+  // Start Agora matching
   const handleEnterChat = async () => {
     setSearching(true);
-    const granted = await requestMediaAccess();
-    if (granted) {
-      setInVideoChat(true);
-      joinQueue();
-    } else {
-      alert("Camera and microphone permissions are required to continue.");
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please log in first.");
+        setSearching(false);
+        return;
+      }
+
+      const res = await joinMatchQueue(token);
+      if (res.matched) {
+        setInVideoChat(true);
+        setRole(res.role || "user");
+        setStatusMessage("Connecting...");
+        const { channelName, yourToken, role } = res;
+        const account = role === "caller" ? "caller" : "callee";
+        await joinChannel(res.channelName, res.yourToken, res.yourAccount);
+
+
+        // start call timer
+        setCallDuration(0);
+        if (callTimerRef.current) clearInterval(callTimerRef.current);
+        callTimerRef.current = setInterval(
+          () => setCallDuration((p) => p + 1),
+          1000
+        );
+      } else {
+        setStatusMessage("Waiting for a match...");
+      }
+    } catch (err) {
+      console.error(err);
+      setStatusMessage("Error joining queue.");
+    } finally {
       setSearching(false);
     }
   };
 
+  // leave agora + reset
+  const handleEnd = async () => {
+    await leaveChannel();
+    setInVideoChat(false);
+    setStatusMessage("Chat ended.");
+    if (callTimerRef.current) clearInterval(callTimerRef.current);
+    setCallDuration(0);
+  };
+
   const handleSendMessage = () => {
     if (chatInput.trim()) {
-      sendMessage(chatInput);
+      setChatMessages((prev) => [...prev, { from: "You", text: chatInput }]);
       setChatInput("");
     }
   };
 
   const handleSkip = () => {
-    skipUser();
-  };
-
-  const handleEnd = () => {
-    endChat();
-    setInVideoChat(false);
+    // skip functionality can leave agora + rejoin queue
+    handleEnd();
+    handleEnterChat();
   };
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden flex flex-col items-center justify-center">
-      {/* Background */}
+      {/* Background videos */}
       {videoUrls.map((url, index) => (
         <BackgroundVideo
           key={index}
@@ -152,9 +193,11 @@ const Dashboard: React.FC = () => {
             <Camera className="w-5 h-5" />
             <span>Activate your camera to start searching</span>
           </div>
-            <p className="text-gray-300 text-sm">
-  ⏱ {Math.floor(callDuration / 60)}:{(callDuration % 60).toString().padStart(2, "0")}
-</p>
+
+          <p className="text-gray-300 text-sm mt-2">
+            ⏱ {Math.floor(callDuration / 60)}:
+            {(callDuration % 60).toString().padStart(2, "0")}
+          </p>
 
           {statusMessage && (
             <p className="text-gray-300 mt-4">
@@ -171,27 +214,27 @@ const Dashboard: React.FC = () => {
 
       {/* Inside video chat mode */}
       {inVideoChat && (
-        <div className="relative z-50 w-full h-full flex flex-col md:flex-row">
+        <div className="relative z-50 w-full h-full ">
           {/* Video area */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 p-4">
-            <div className="relative flex gap-6 items-center justify-center">
+          <div className="w-full h-full flex items-center justify-center bg-black">
+           
               {/* Remote user video */}
-              <div className="relative">
+              
                 <video
                   ref={remoteVideoRef}
                   autoPlay
                   playsInline
-                  className="w-[500px] h-[360px] rounded-xl border border-white/30 bg-gray-800 object-cover"
+                  className="w-full h-full object-cover"
                 />
-                {!remoteStream && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/60 rounded-xl">
+                {!remoteTracks.video && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/60 ">
                     <Users className="w-10 h-10 text-gray-400 mb-2" />
                     <p className="text-gray-300">
                       {statusMessage || "No users available right now"}
                     </p>
                   </div>
                 )}
-              </div>
+              
 
               {/* Local video (self preview) */}
               <video
@@ -201,12 +244,15 @@ const Dashboard: React.FC = () => {
                 playsInline
                 className="w-48 h-36 absolute bottom-6 right-6 rounded-lg border border-white/30 bg-gray-900 object-cover"
               />
-            </div>
+           
 
             {/* Controls */}
-            <div className="flex flex-wrap justify-center gap-4 mt-6">
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex flex-wrap justify-center gap-4">
               <button
-                onClick={toggleCamera}
+                onClick={() => {
+                  setCamOn((p) => !p);
+                  agoraToggleCamera();
+                }}
                 className={`p-3 rounded-full transition-all ${
                   isCamOn ? "bg-green-600" : "bg-red-600"
                 }`}
@@ -218,12 +264,19 @@ const Dashboard: React.FC = () => {
                 )}
               </button>
               <button
-                onClick={toggleMic}
+                onClick={() => {
+                  setMicOn((p) => !p);
+                  agoraToggleMic();
+                }}
                 className={`p-3 rounded-full transition-all ${
                   isMicOn ? "bg-green-600" : "bg-red-600"
                 }`}
               >
-                {isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                {isMicOn ? (
+                  <Mic className="w-5 h-5" />
+                ) : (
+                  <MicOff className="w-5 h-5" />
+                )}
               </button>
               <button
                 onClick={handleSkip}
@@ -243,7 +296,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Chat panel */}
-          <div className="w-full md:w-80 bg-gray-900/90 backdrop-blur-md border-l border-white/10 flex flex-col justify-between p-4">
+          {/* <div className="absolute top-0 right-0 w-80 h-full bg-gray-900/90 backdrop-blur-md border-l border-white/10 flex flex-col justify-between p-4">
             <div className="flex-1 overflow-y-auto space-y-2">
               {chatMessages.length === 0 ? (
                 <p className="text-gray-400 text-center mt-4">
@@ -269,7 +322,7 @@ const Dashboard: React.FC = () => {
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="Type a message..."
-                className="flex-1 p-2 rounded-lg text-white"
+                className="flex-1 p-2 rounded-lg text-white bg-gray-800 focus:outline-none"
               />
               <button
                 onClick={handleSendMessage}
@@ -278,7 +331,7 @@ const Dashboard: React.FC = () => {
                 <Send className="w-4 h-4" />
               </button>
             </div>
-          </div>
+          </div> */}
         </div>
       )}
     </div>
