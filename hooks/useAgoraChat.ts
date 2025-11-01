@@ -25,7 +25,7 @@ export function useAgoraChat() {
   }>({});
   const [channelName, setChannelName] = useState<string | null>(null);
 
-  // 🔹 Join channel using Agora (account-based)
+  // 🔹 Join Agora channel
   const joinChannel = useCallback(
     async (channel: string, token: string, account: string) => {
       if (!APP_ID) throw new Error("Missing NEXT_PUBLIC_AGORA_APP_ID");
@@ -36,11 +36,9 @@ export function useAgoraChat() {
       console.log("Joining Agora channel with:", {
         appId: APP_ID,
         channel,
-        token: token.slice(0, 20) + "...",
         account,
       });
 
-      // ✅ join with account-based identity (must match backend token)
       await client.join(APP_ID, channel, token, account);
 
       const mic = await AgoraRTC.createMicrophoneAudioTrack();
@@ -52,7 +50,6 @@ export function useAgoraChat() {
       await client.publish([mic, cam]);
       console.log("✅ Published local tracks");
 
-      // handle remote users
       client.on("user-published", async (user: IAgoraRTCRemoteUser, mediaType) => {
         await client.subscribe(user, mediaType);
         if (mediaType === "video") {
@@ -81,7 +78,7 @@ export function useAgoraChat() {
     []
   );
 
-  // 🔹 Leave channel and cleanup
+  // 🔹 Leave channel
   const leaveChannel = useCallback(async () => {
     console.log("Leaving Agora channel...");
     if (localAudioTrack) {
@@ -106,9 +103,7 @@ export function useAgoraChat() {
   const toggleMic = useCallback(() => {
     if (localAudioTrack) {
       localAudioTrack.setEnabled(!localAudioTrack.enabled);
-      console.log(
-        `🎤 Mic ${localAudioTrack.enabled ? "enabled" : "muted"}`
-      );
+      console.log(`🎤 Mic ${localAudioTrack.enabled ? "enabled" : "muted"}`);
     }
   }, [localAudioTrack]);
 
@@ -121,32 +116,39 @@ export function useAgoraChat() {
     }
   }, [localVideoTrack]);
 
-  // 🔹 Get match from backend
-  // 🔹 Polls backend until a match is found
-const joinMatchQueue = useCallback(async (token: string) => {
-  let matchedResponse = null;
+  // 🔹 Matchmaking poller — handles both caller & callee
+  const joinMatchQueue = useCallback(async (token: string) => {
+    console.log("Joining match queue...");
+    let matchedResponse = null;
 
-  while (!matchedResponse) {
-    const res = await axios.post(
-      `${API_URL}/match/join`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    while (!matchedResponse) {
+      const res = await axios.post(
+        `${API_URL}/match/join`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    console.log("Match response:", res.data);
+      console.log("Match response:", res.data);
 
-    if (res.data.matched) {
-      matchedResponse = res.data;
-      break;
+      if (res.data.matched) {
+        matchedResponse = res.data;
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 3000));
     }
 
-    // If still waiting, retry after short delay
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-  }
-
-  return matchedResponse;
-}, []);
-
+    // ✅ Ensure both sides return consistent structure
+    return {
+      matched: true,
+      roomId: matchedResponse.roomId,
+      channelName: matchedResponse.channelName,
+      role: matchedResponse.role,
+      yourToken: matchedResponse.yourToken,
+      yourAccount: matchedResponse.yourAccount,
+      other: matchedResponse.other,
+    };
+  }, []);
 
   return {
     joinChannel,
