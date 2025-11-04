@@ -29,6 +29,7 @@ export function useAgoraChat() {
   const joinChannel = useCallback(
     async (channel: string, token: string, account: string) => {
       if (!APP_ID) throw new Error("Missing NEXT_PUBLIC_AGORA_APP_ID");
+
       const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
       clientRef.current = client;
       setChannelName(channel);
@@ -50,6 +51,7 @@ export function useAgoraChat() {
       await client.publish([mic, cam]);
       console.log("✅ Published local tracks");
 
+      // 🔹 Handle remote users
       client.on("user-published", async (user: IAgoraRTCRemoteUser, mediaType) => {
         await client.subscribe(user, mediaType);
         if (mediaType === "video") {
@@ -63,13 +65,13 @@ export function useAgoraChat() {
         }
       });
 
-      client.on("user-unpublished", (user) => {
-        console.log("❌ Remote user unpublished:", user.uid);
+      client.on("user-unpublished", () => {
+        console.log("❌ Remote user unpublished");
         setRemoteTracks({});
       });
 
-      client.on("user-left", (user) => {
-        console.log("👋 Remote user left:", user.uid);
+      client.on("user-left", () => {
+        console.log("👋 Remote user left");
         setRemoteTracks({});
       });
 
@@ -78,7 +80,7 @@ export function useAgoraChat() {
     []
   );
 
-  // 🔹 Leave channel
+  // 🔹 Leave channel and cleanup
   const leaveChannel = useCallback(async () => {
     console.log("Leaving Agora channel...");
     if (localAudioTrack) {
@@ -116,39 +118,20 @@ export function useAgoraChat() {
     }
   }, [localVideoTrack]);
 
-  // 🔹 Matchmaking poller — handles both caller & callee
-  const joinMatchQueue = useCallback(async (token: string) => {
-    console.log("Joining match queue...");
-    let matchedResponse = null;
-
-    while (!matchedResponse) {
+  // 🔹 Matchmaking request
+  const joinMatchQueue = useCallback(
+    async (token: string, lookingFor: "male" | "female" | "both" = "both") => {
       const res = await axios.post(
         `${API_URL}/match/join`,
-        {},
+        { lookingFor }, // ✅ correct field name and value
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       console.log("Match response:", res.data);
-
-      if (res.data.matched) {
-        matchedResponse = res.data;
-        break;
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-    }
-
-    // ✅ Ensure both sides return consistent structure
-    return {
-      matched: true,
-      roomId: matchedResponse.roomId,
-      channelName: matchedResponse.channelName,
-      role: matchedResponse.role,
-      yourToken: matchedResponse.yourToken,
-      yourAccount: matchedResponse.yourAccount,
-      other: matchedResponse.other,
-    };
-  }, []);
+      return res.data;
+    },
+    []
+  );
 
   return {
     joinChannel,

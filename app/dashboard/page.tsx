@@ -52,7 +52,7 @@ const Dashboard: React.FC = () => {
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [callDuration, setCallDuration] = useState<number>(0);
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
-
+  const [preference, setPreference] = useState<"male" | "female" | "both">("both");
   const user =
     typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user") || "{}") : {};
   const userId = user.id || "";
@@ -99,46 +99,44 @@ const Dashboard: React.FC = () => {
       remoteTracks.video.play(remoteVideoRef.current);
   }, [remoteTracks.video]);
 
-  // Start matchmaking & join video
-  const handleEnterChat = async () => {
-    setSearching(true);
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Please log in first.");
-        setSearching(false);
-        return;
-      }
 
-      const res = await joinMatchQueue(token);
-      console.log("Matched:", res);
 
+
+
+// inside handleEnterChat
+const handleEnterChat = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) return alert("Please log in first");
+  
+  setSearching(true);
+  setStatusMessage("Searching...");
+
+  try {
+    let matched = null;
+    while (!matched) {
+      const res = await joinMatchQueue(token, preference);
       if (res.matched) {
-        setInVideoChat(true);
-        setRole(res.role || "user");
-        setStatusMessage("Connecting...");
-        setRoomId(res.roomId);
-        setPartnerId(res.other?._id || null);
-
-        await joinChannel(res.channelName, res.yourToken, res.yourAccount);
-
-        // Start call timer
-        setCallDuration(0);
-        if (callTimerRef.current) clearInterval(callTimerRef.current);
-        callTimerRef.current = setInterval(
-          () => setCallDuration((p) => p + 1),
-          1000
-        );
-      } else {
-        setStatusMessage("Waiting for a match...");
+        matched = res;
+        break;
       }
-    } catch (err) {
-      console.error("Join error:", err);
-      setStatusMessage("Error joining queue.");
-    } finally {
-      setSearching(false);
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // retry every 2s
     }
-  };
+
+    console.log("✅ Matched:", matched);
+    setInVideoChat(true);
+    setStatusMessage("Connecting...");
+    await joinChannel(matched.channelName, matched.yourToken, matched.yourAccount);
+  } catch (err) {
+    console.error("Error joining:", err);
+    setStatusMessage("Error joining queue.");
+  } finally {
+    setSearching(false);
+  }
+};
+
+
+
+
 
   const handleEnd = async () => {
     await leaveChannel();
@@ -180,6 +178,33 @@ const Dashboard: React.FC = () => {
       {!inVideoChat && (
         <div className="z-50 flex flex-col items-center justify-center text-center">
           <h1 className="text-5xl font-bold text-white mb-4">Start Video Chat</h1>
+          <div className="flex gap-3 mb-4">
+  <button
+    onClick={() => setPreference("male")}
+    className={`px-4 py-2 rounded-lg ${
+      preference === "male" ? "bg-blue-600" : "bg-gray-700"
+    }`}
+  >
+    Guys
+  </button>
+  <button
+    onClick={() => setPreference("female")}
+    className={`px-4 py-2 rounded-lg ${
+      preference === "female" ? "bg-pink-600" : "bg-gray-700"
+    }`}
+  >
+    Girls
+  </button>
+  <button
+    onClick={() => setPreference("both")}
+    className={`px-4 py-2 rounded-lg ${
+      preference === "both" ? "bg-green-600" : "bg-gray-700"
+    }`}
+  >
+    Both
+  </button>
+</div>
+
           <button
             onClick={handleEnterChat}
             disabled={searching}
