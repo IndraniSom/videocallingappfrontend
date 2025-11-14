@@ -33,7 +33,16 @@
     const [preference, setPreference] = useState<"male" | "female" | "both">("both");
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-    const user = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user") || "{}") : {};
+    const [user, setUser] = useState<any>({});
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+      setMounted(true);
+      if (typeof window !== "undefined") {
+        const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+        setUser(storedUser);
+      }
+    }, []);
     const userId = user?.id ?? "";
     const subscriptionType = user?.subscriptionType ?? "free";
     const isPremium = subscriptionType === "premium";
