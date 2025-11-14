@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Video,
   Heart,
@@ -8,6 +8,7 @@ import {
   Menu,
   X,
   LogOut,
+  UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -15,10 +16,16 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [profileImageError, setProfileImageError] = useState(false);
   const { user, loading, logout } = useUserProfile();
 
+  // Reset profile image error when user changes
+  useEffect(() => {
+    setProfileImageError(false);
+  }, [user?.profilePicture]);
+
   return (
-    <nav className="sticky top-0 z-50 bg-white text-black shadow-md border-b border-gray-200">
+    <nav className="sticky top-0 z-50 bg-gradient-to-r from-purple-900 to-pink-900 text-black ">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo */}
@@ -38,13 +45,13 @@ const Navbar = () => {
               <span className="font-medium">Video Chat</span>
             </Link>
 
-            <Link
+            {/* <Link
               href="/dating"
               className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-lg transition-all duration-300"
             >
               <Heart className="w-5 h-5" />
               <span className="font-medium">Dating</span>
-            </Link>
+            </Link> */}
 
             <Link
               href="/messages"
@@ -52,6 +59,14 @@ const Navbar = () => {
             >
               <MessageCircle className="w-5 h-5" />
               <span className="font-medium">Messages</span>
+            </Link>
+
+            <Link
+              href="/friend-requests"
+              className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-lg transition-all duration-300 relative"
+            >
+              <UserPlus className="w-5 h-5" />
+              <span className="font-medium">Requests</span>
             </Link>
           </div>
 
@@ -68,10 +83,19 @@ const Navbar = () => {
               <>
                 {/* Profile Icon */}
                 <button
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 relative"
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 relative overflow-hidden"
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                 >
-                  <User className="w-5 h-5 text-red-500" />
+                  {user?.profilePicture && !profileImageError ? (
+                    <img
+                      src={user.profilePicture}
+                      alt={`${user.firstName || user.firstname || ''} ${user.lastName || user.lastname || ''}`}
+                      className="w-full h-full object-cover"
+                      onError={() => setProfileImageError(true)}
+                    />
+                  ) : (
+                    <User className="w-5 h-5 text-red-500" />
+                  )}
                 </button>
 
                 {/* Logout Button */}
@@ -85,10 +109,22 @@ const Navbar = () => {
 
                 {/* Profile Dropdown */}
                 {dropdownOpen && user && (
-                  <div className="absolute right-0 top-14 bg-white border border-gray-200 shadow-lg rounded-md p-4 w-56">
+                  <div className="absolute right-0 top-14 bg-gradient-to-r from-purple-900 to-pink-900 border border-gray-200 shadow-lg rounded-md p-4 w-56">
+                    {user.profilePicture && (
+                      <div className="mb-3 flex justify-center">
+                        <img
+                          src={user.profilePicture}
+                          alt={`${user.firstName || user.firstname || ''} ${user.lastName || user.lastname || ''}`}
+                          className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
                     <p className="text-sm text-gray-700 mb-2">
                       <span className="font-semibold">Name:</span>{" "}
-                      {user.firstName} {user.lastName}
+                      {user.firstName || user.firstname || ''} {user.lastName || user.lastname || ''}
                     </p>
                     <p className="text-sm text-gray-700 mb-2">
                       <span className="font-semibold">Email:</span> {user.email}
@@ -137,7 +173,7 @@ const Navbar = () => {
 
         {/* Mobile Menu - Icons Only */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 flex justify-around border-t border-gray-200 bg-white">
+          <div className="md:hidden py-4 flex justify-around border-t border-gray-200 bg-gradient-to-r from-purple-900 to-pink-900">
             <Link
               href="/dashboard"
               className="flex flex-col items-center text-gray-700 hover:text-red-500"
@@ -146,13 +182,13 @@ const Navbar = () => {
               <span className="text-xs mt-1">Chat</span>
             </Link>
 
-            <Link
+            {/* <Link
               href="/dating"
               className="flex flex-col items-center text-gray-700 hover:text-red-500"
             >
               <Heart className="w-6 h-6" />
               <span className="text-xs mt-1">Dating</span>
-            </Link>
+            </Link> */}
 
             <Link
               href="/messages"
@@ -160,6 +196,14 @@ const Navbar = () => {
             >
               <MessageCircle className="w-6 h-6" />
               <span className="text-xs mt-1">Messages</span>
+            </Link>
+
+            <Link
+              href="/friend-requests"
+              className="flex flex-col items-center text-gray-700 hover:text-red-500 relative"
+            >
+              <UserPlus className="w-6 h-6" />
+              <span className="text-xs mt-1">Requests</span>
             </Link>
 
             {user && (

@@ -26,8 +26,8 @@ export default function VideoVerificationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white border rounded-lg p-6 shadow-md">
+    <div className="min-h-screen bg-gradient-to-r from-purple-900 to-pink-900 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-gradient-to-r from-purple-900 to-pink-900 border rounded-lg p-6 shadow-md">
         <h1 className="text-2xl font-bold text-center mb-4">Video Verification</h1>
         <p className="text-gray-600 mb-6 text-center">
           Please record or upload a verification video to complete your registration.

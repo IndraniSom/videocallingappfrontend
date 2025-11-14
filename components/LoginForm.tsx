@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { GenderSelectionModal } from "./GenderSelectionModal";
 
 interface LoginFormProps {
   heading?: string;
@@ -34,10 +35,21 @@ const LoginForm = ({
   loginText = "Don't have an account",
   loginUrl = "/signup",
 }: LoginFormProps) => {
+  const [showGenderModal, setShowGenderModal] = useState(false);
+  const [selectedGender, setSelectedGender] = useState<'male' | 'female' | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuth();
+  const { login, signInWithGoogle } = useAuth();
   const router = useRouter();
+
+  const handleGenderSelect = (gender: 'male' | 'female') => {
+    setSelectedGender(gender);
+    setShowGenderModal(false);
+    // Retry Google sign-in with selected gender
+    if (gender) {
+      handleGoogleSignInWithGender(gender);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,10 +61,42 @@ const LoginForm = ({
       // Handle error (show error message to user)
     }
   };
+
+  const handleGoogleSignInWithGender = async (gender: 'male' | 'female') => {
+    try {
+      await signInWithGoogle(gender);
+      router.push('/dashboard');
+    } catch (error: any) {
+      // If backend says user needs gender, show modal
+      if (error.response?.data?.message?.includes('gender') || error.response?.data?.message?.includes('Role')) {
+        setShowGenderModal(true);
+      } else {
+        console.error('Google sign-in failed:', error);
+      }
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      // Try to sign in without gender first
+      const result = await signInWithGoogle();
+      router.push('/dashboard');
+    } catch (error: any) {
+      // If backend says user needs gender, show modal
+      if (error.response?.data?.requiresGender || 
+          error.response?.data?.message?.includes('Gender') || 
+          error.response?.data?.message?.includes('gender') ||
+          (error.response?.status === 400 && error.response?.data?.message?.includes('required'))) {
+        setShowGenderModal(true);
+      } else {
+        console.error('Google sign-in failed:', error);
+      }
+    }
+  };
   return (
-    <section className=" w-full h-screen bg-white signup-background">
+    <section className=" w-full h-screen bg-gradient-to-r from-purple-900 to-pink-900 signup-background">
       <div className="flex h-full items-center justify-center">
-        <div className="border-muted bg-white flex w-full max-w-sm flex-col items-center gap-y-8 rounded-md border px-6 py-12 shadow-md">
+        <div className="border-muted bg-gradient-to-r from-purple-900 to-pink-900 flex w-full max-w-sm flex-col items-center gap-y-8 rounded-md border px-6 py-12 shadow-md">
           <div className="flex flex-col items-center gap-y-2">
             {/* Logo */}
             <div className="flex items-center gap-1 lg:justify-start">
@@ -69,6 +113,7 @@ const LoginForm = ({
             </div>
             {heading && <h1 className="text-3xl font-semibold">{heading}</h1>}
           </div>
+          {showGenderModal && <GenderSelectionModal onSelect={handleGenderSelect} />}
           <form onSubmit={handleSubmit} className="flex w-full flex-col gap-8">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
@@ -95,7 +140,7 @@ const LoginForm = ({
                 <Button type="submit" className="mt-2 w-full bg-red-700 hover:bg-red-600">
                   {signupText}
                 </Button>
-                <Button type="button" className="w-full text-red-500 border-[1px] border-black rounded-md">
+                <Button type="button" onClick={handleGoogleSignIn} className="w-full text-red-500 border-[1px] border-black rounded-md">
                   <FcGoogle className="mr-2 size-5" />
                   {googleText}
                 </Button>

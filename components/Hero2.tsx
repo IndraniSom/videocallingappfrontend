@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 export default function Hero2() {
   return (
-    <div className="min-h-fit bg-white w-full">
+    <div className="min-h-fit bg-gradient-to-r from-purple-900 to-pink-900 w-full">
      
       {/* Main Content */}
       <main className="container max-w-6xl mx-auto px-4 ">
@@ -12,11 +12,11 @@ export default function Hero2() {
           {/* Left Column - Text Content */}
           <div className="space-y-6">
             <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
-              <span className="text-pink-500">Best platform</span>
-              <span className="text-gray-900"> For Random Video Chat with Pretty Girls</span>
+              <span className="text-fuchsia-200">Best platform</span>
+              <span className="text-white"> For Random Video Chat with Pretty Girls</span>
             </h1>
             
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-white">
                 Discover exciting conversations and connections with beautiful girls.Try our random video chat platform now!
             </p>
 

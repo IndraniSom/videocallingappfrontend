@@ -7,7 +7,7 @@ interface GenderSelectionModalProps {
 const GenderSelectionModal = ({ onSelect }: GenderSelectionModalProps) => {
   return (
     <div className="fixed inset-0 signup-background bg-opacity-50 flex items-center justify-center z-50 text-black">
-      <div className="bg-white rounded-lg p-8 max-w-md w-full">
+      <div className="bg-gradient-to-r from-purple-900 to-pink-900 rounded-lg p-8 max-w-md w-full">
         <h2 className="text-2xl font-semibold text-center mb-6">Choose Your Gender</h2>
         <div className="flex gap-6 justify-center">
           <button

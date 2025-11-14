@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 
 function Feature() {
   return (
-    <div className="w-full text-black flex justify-center bg-white">
+    <div className="w-full text-black flex justify-center bg-gradient-to-r from-purple-900 to-pink-900">
       <div className="max-w-7xl container mx-auto">
         <div className="flex gap-4 py-10 md:py-20 flex-col items-start">
           <div>

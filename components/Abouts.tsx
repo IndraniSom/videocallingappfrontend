@@ -48,13 +48,13 @@ const Abouts: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-r from-purple-900 to-pink-900 flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-6xl">
         <div className="text-center mb-8 sm:mb-12">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-2">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
             What do I want
           </h1>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
             today?
           </h2>
         </div>
@@ -105,12 +105,12 @@ const Abouts: React.FC = () => {
         </div>
 
         {/* CTA Section */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 bg-white rounded-2xl p-4 sm:p-6 shadow-xl max-w-3xl mx-auto">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 bg-gradient-to-r from-purple-900 to-pink-900 rounded-2xl p-4 sm:p-6 shadow-xl max-w-3xl mx-auto">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-pink-400 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
               <Video className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <span className="text-xl sm:text-2xl font-semibold text-gray-800">
+            <span className="text-xl sm:text-2xl font-semibold text-white">
               Ready to talk?
             </span>
           </div>

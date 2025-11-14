@@ -41,7 +41,7 @@ const Signup1 = ({
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const { signup } = useAuth();
+  const { signup, signInWithGoogle } = useAuth();
   const router = useRouter();
 
   const handleGenderSelect = (gender: 'male' | 'female') => {
@@ -71,10 +71,36 @@ const Signup1 = ({
       // Handle error (show error message to user)
     }
   };
+
+  const handleGoogleSignIn = async () => {
+    if (!selectedGender) {
+      // Show gender modal if not selected
+      setShowGenderModal(true);
+      return;
+    }
+    try {
+      const result = await signInWithGoogle(selectedGender);
+      if (selectedGender === 'female') {
+        router.push('/video-verification');
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (error: any) {
+      // If backend says user needs gender, show modal (shouldn't happen since we check)
+      if (error.response?.data?.requiresGender || 
+          error.response?.data?.message?.includes('Gender') || 
+          error.response?.data?.message?.includes('gender')) {
+        setShowGenderModal(true);
+      } else {
+        console.error('Google sign-in failed:', error);
+      }
+    }
+  };
+
   return (
-    <section className=" w-full h-screen bg-white signup-background">
+    <section className=" w-full h-screen bg-gradient-to-r from-purple-900 to-pink-900 signup-background">
       <div className="flex h-full items-center justify-center">
-        <div className="border-muted bg-white flex w-full max-w-sm flex-col items-center gap-y-8 rounded-md border px-6 py-12 shadow-md">
+        <div className="border-muted bg-gradient-to-r from-purple-900 to-pink-900 flex w-full max-w-sm flex-col items-center gap-y-8 rounded-md border px-6 py-12 shadow-md">
           <div className="flex flex-col items-center gap-y-2">
             {/* Logo */}
             <div className="flex items-center gap-1 lg:justify-start">
@@ -132,7 +158,7 @@ const Signup1 = ({
                 <Button type="submit" className="mt-2 w-full bg-red-700 hover:bg-red-600">
                   {signupText}
                 </Button>
-                <Button type="button" className="w-full text-red-500 border-[1px] border-black rounded-md">
+                <Button type="button" onClick={handleGoogleSignIn} className="w-full text-red-500 border-[1px] border-black rounded-md">
                   <FcGoogle className="mr-2 size-5" />
                   {googleText}
                 </Button>

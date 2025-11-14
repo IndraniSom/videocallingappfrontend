@@ -35,7 +35,7 @@ export default function HomePage() {
   },
 ]
   return (
-    <div className="w-full  h-full bg-white">
+    <div className="w-full  h-full bg-gradient-to-r from-purple-900 to-pink-900">
       <Hero2/>
       <Abouts/>
        <FeatureSteps 

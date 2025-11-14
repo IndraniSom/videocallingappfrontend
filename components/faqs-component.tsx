@@ -33,7 +33,7 @@ export default function FAQs() {
     ]
 
     return (
-        <section className="bg-white py-16 md:py-24">
+        <section className="bg-gradient-to-r from-purple-900 to-pink-900 py-16 md:py-24">
             <div className="mx-auto max-w-7xl px-4 md:px-6">
                 <div>
                     <h2 className="text-black text-4xl font-semibold">Frequently Asked Questions</h2>

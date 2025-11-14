@@ -9,6 +9,7 @@ export interface Friend {
     lastName?: string;
     email?: string;
     role?: string;
+    profilePicture?: string;
   };
   status: "pending" | "accepted";
 }
@@ -19,6 +20,7 @@ export interface OppositeUser {
   lastName?: string;
   email?: string;
   role?: string;
+  profilePicture?: string;
   status?: "not_friends" | "pending" | "accepted";
 }
 
@@ -32,8 +34,9 @@ export function useFriends() {
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  const userId =
-    typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+  const user =
+    typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user") || "{}") : {};
+  const userId = user.id || user._id || null;
 
   // Fetch all data
   const fetchFriends = useCallback(async () => {
@@ -48,8 +51,9 @@ export function useFriends() {
       setFriends(allFriends);
 
       // Incoming = where status is pending and current user was not sender
+      // Compare as strings to handle ObjectId vs string comparison
       const incoming = allFriends.filter(
-        (f: any) => f.status === "pending" && f.user._id !== userId
+        (f: any) => f.status === "pending" && String(f.user._id || f.user.id) !== String(userId)
       );
       setIncomingRequests(incoming);
     } catch (err) {
@@ -136,5 +140,6 @@ export function useFriends() {
     sendFriendRequest,
     acceptFriendRequest,
     rejectFriendRequest,
+    fetchFriends,
   };
 }
