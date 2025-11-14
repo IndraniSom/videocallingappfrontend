@@ -33,18 +33,18 @@ export default function FAQs() {
     ]
 
     return (
-        <section className="bg-gradient-to-r from-purple-900 to-pink-900 py-16 md:py-24">
+        <section className="bg-[#5940df] py-16 md:py-24">
             <div className="mx-auto max-w-7xl px-4 md:px-6">
                 <div>
-                    <h2 className="text-black text-4xl font-semibold">Frequently Asked Questions</h2>
-                    <p className="text-black mt-4 text-balance text-lg">Discover quick and comprehensive answers to common questions about our platform, services, and features.</p>
+                    <h2 className="text-white text-4xl font-semibold">Frequently Asked Questions</h2>
+                    <p className="text-white mt-4 text-balance text-lg">Discover quick and comprehensive answers to common questions about our platform, services, and features.</p>
                 </div>
 
                 <div className="mt-12">
                     <Accordion
                         type="single"
                         collapsible
-                        className=" w-full text-black  px-8 py-3 ">
+                        className=" w-full text-white  px-8 py-3 ">
                         {faqItems.map((item) => (
                             <AccordionItem
                                 key={item.id}
@@ -58,7 +58,7 @@ export default function FAQs() {
                         ))}
                     </Accordion>
 
-                    <p className="text-black mt-6">
+                    <p className="text-white mt-6">
                         Can't find what you're looking for? Contact our{' '}
                         <Link
                             href="#"

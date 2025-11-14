@@ -38,7 +38,7 @@ export default function FriendsPage() {
   console.log("Filtered Users:", filteredUsers);
   
   return (
-    <div className="min-h-screen bg-gradient-to-r from-purple-900 to-pink-900 text-black flex flex-col items-center overflow-hidden relative">
+    <div className="min-h-screen bg-[#5940df] text-white flex flex-col items-center overflow-hidden relative">
       {/* Header */}
       {/* <div className="absolute top-0 left-0 right-0 p-4 bg-gray-900 border-b border-gray-800 text-center text-2xl font-bold shadow-lg">
         💞 Discover New Friends

@@ -98,9 +98,9 @@ const Signup1 = ({
   };
 
   return (
-    <section className=" w-full h-screen bg-gradient-to-r from-purple-900 to-pink-900 signup-background">
+    <section className=" w-full h-screen bg-[#5940df] ">
       <div className="flex h-full items-center justify-center">
-        <div className="border-muted bg-gradient-to-r from-purple-900 to-pink-900 flex w-full max-w-sm flex-col items-center gap-y-8 rounded-md border px-6 py-12 shadow-md">
+        <div className="border-muted bg-[#9381f5] flex w-full max-w-sm flex-col items-center gap-y-8 rounded-md border px-6 py-12 shadow-md">
           <div className="flex flex-col items-center gap-y-2">
             {/* Logo */}
             <div className="flex items-center gap-1 lg:justify-start">
@@ -165,7 +165,7 @@ const Signup1 = ({
               </div>
             </div>
           </form>
-          <div className=" flex justify-center gap-1 text-sm text-black">
+          <div className=" flex justify-center gap-1 text-sm text-white">
             <p>{loginText}</p>
             <a
               href={loginUrl}

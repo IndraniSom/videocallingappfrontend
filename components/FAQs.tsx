@@ -36,7 +36,7 @@ export default function FAQs() {
         <section className="w-full flex justify-center py-16 md:py-24">
             <div className="container mx-auto max-w-7xl px-6">
                 <div className="space-y-12">
-                    <h2 className="text-black text-center text-4xl font-semibold">Your questions answered</h2>
+                    <h2 className="text-white text-center text-4xl font-semibold">Your questions answered</h2>
 
                     <Accordion
                         type="single"

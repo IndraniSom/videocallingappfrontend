@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 export default function Hero2() {
   return (
-    <div className="min-h-fit bg-gradient-to-r from-purple-900 to-pink-900 w-full">
+    <div className="min-h-fit bg-[#5940df] w-full">
      
       {/* Main Content */}
       <main className="container max-w-6xl mx-auto px-4 ">

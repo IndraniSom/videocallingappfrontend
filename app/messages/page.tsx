@@ -10,7 +10,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
-
+import { MessageCircle } from "lucide-react";
 export default function ChatPage() {
   const [friends, setFriends] = useState<any[]>([]);
   const [activeFriend, setActiveFriend] = useState<any | null>(null);
@@ -274,14 +274,18 @@ export default function ChatPage() {
   }, [messages]);
 console.log("Active Friend:", user);
   return (
-    <div className="min-h-screen flex bg-gray-100 text-black border-t-2 border-t-gray-400">
+    <div className="min-h-screen flex bg-gradient-to-b from-[#3a2a5a] to-[#2a1a4a] text-white flex-col md:flex-row">
       {/* 🟩 Left Sidebar - Friends List */}
-      <div className="w-80 shadow-2xl  bg-gradient-to-r from-purple-900 to-pink-900 flex flex-col">
-        <div className="p-4 border-b border-gray-800 text-lg font-semibold bg-gradient-to-r from-purple-900 to-pink-900 text-black flex gap-2">
-           <Image src="https://res.cloudinary.com/djamamkqn/image/upload/v1761569632/f635f885-d49b-4333-9495-d149401430e3-removebg-preview_rwpuhc.png" alt="" width={5} height={5} className="object-cover size-5"/> Chats
+      <div className={`${activeFriend ? 'hidden md:flex' : 'flex'} md:w-96 w-full shadow-2xl bg-[#4a3a6a] flex flex-col border-r border-[#5a4a7a]`}>
+        <div className="p-6 border-b border-[#5a4a7a] text-xl font-bold bg-gradient-to-r from-[#6b4fd4] to-[#5940df] text-white flex gap-3 items-center ">
+           <MessageCircle className="w-6 h-6" /> Messages
         </div>
         {friends.length === 0 ? (
-          <div className="text-gray-400 text-center p-4">No friends yet</div>
+          <div className="text-gray-400 text-center p-8 flex flex-col items-center justify-center flex-1">
+            <MessageCircle className="w-16 h-16 mb-4 text-[#6b4fd4] opacity-50" />
+            <p className="text-lg">No friends yet</p>
+            <p className="text-sm text-gray-500 mt-2">Add friends to start chatting</p>
+          </div>
         ) : (
           <div className="flex-1 overflow-y-auto">
             {friends.map((f) => {
@@ -293,20 +297,23 @@ console.log("Active Friend:", user);
               return (
                 <div
                   key={friendId}
-                  className={`p-4 flex gap-2 cursor-pointer transition relative ${
-                    activeFriend?.user?._id === friendId ? "bg-red-200" : "hover:bg-gray-100"
-                  }`}
-                >
-                  <div className="flex-1 flex items-center gap-2" onClick={() => {
+                  onClick={() => {
                     setActiveFriend(f);
                     fetchMessages(friendId);
-                  }}>
-                    <div className="relative">
+                  }}
+                  className={`p-4 flex gap-3 cursor-pointer transition-all duration-300 border-b border-[#3a2a5a] ${
+                    activeFriend?.user?._id === friendId 
+                      ? "bg-gradient-to-r from-[#6b4fd4] to-[#5940df] shadow-lg" 
+                      : "hover:bg-[#5a4a7a]"
+                  }`}
+                >
+                  <div className="flex-1 flex items-center gap-3 min-w-0">
+                    <div className="relative flex-shrink-0">
                       {f.user.profilePicture ? (
                         <img
                           src={f.user.profilePicture}
                           alt={`${f.user.firstName} ${f.user.lastName}`}
-                          className="w-10 h-10 rounded-full object-cover"
+                          className="w-12 h-12 rounded-full object-cover ring-2 ring-[#6b4fd4]"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
                           }}
@@ -316,22 +323,25 @@ console.log("Active Friend:", user);
                           src={`https://ui-avatars.com/api/?name=${f.user.firstName}`} 
                           unoptimized 
                           alt="avatar" 
-                          width={40} 
-                          height={40} 
-                          className="w-10 h-10 rounded-full object-cover bg-red-400" 
+                          width={48} 
+                          height={48} 
+                          className="w-12 h-12 rounded-full object-cover bg-gradient-to-br from-pink-500 to-red-500" 
                         />
                       )}
                       {/* Online status indicator */}
-                      <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                        isOnline ? "bg-green-500" : "bg-gray-400"
+                      <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#4a3a6a] ${
+                        isOnline ? "bg-green-500" : "bg-gray-500"
                       }`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="font-medium text-black truncate">{f.user.firstName} {f.user.lastName}</p>
+                        <p className="font-semibold text-white truncate">{f.user.firstName} {f.user.lastName}</p>
+                        <span className={`text-xs px-2 py-1 rounded-full ${isOnline ? "bg-green-500/20 text-green-300" : "bg-gray-500/20 text-gray-400"}`}>
+                          {isOnline ? "Online" : "Offline"}
+                        </span>
                       </div>
                       {lastMsg && (
-                        <p className="text-sm text-gray-500 truncate">
+                        <p className="text-sm text-gray-400 truncate mt-1">
                           {lastMsg.message_type === "image" ? "📷 Image" :
                            lastMsg.message_type === "video" ? "🎥 Video" :
                            lastMsg.message_type === "audio" ? "🎵 Audio" :
@@ -347,25 +357,25 @@ console.log("Active Friend:", user);
                       e.stopPropagation();
                       setShowFriendMenu(showFriendMenu === friendId ? null : friendId);
                     }}
-                    className="p-1 hover:bg-gray-200 rounded"
+                    className="p-2 hover:bg-[#3a2a5a] rounded-full flex-shrink-0 transition"
                   >
-                    <MoreVertical className="w-4 h-4" />
+                    <MoreVertical className="w-5 h-5 text-gray-300" />
                   </button>
                   {showFriendMenu === friendId && (
-                    <div className="absolute right-2 top-12 bg-gradient-to-r from-purple-900 to-pink-900 border border-gray-200 shadow-lg rounded-md p-2 z-10">
+                    <div className="absolute right-4 top-16 bg-[#3a2a5a] border border-[#5a4a7a] shadow-xl rounded-xl p-2 z-10">
                       <button
                         onClick={() => handleBlock(friendId)}
-                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded text-left text-sm"
+                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-[#4a3a6a] rounded-lg text-left text-sm text-white transition"
                       >
                         <Ban className="w-4 h-4" />
-                        Block
+                        Block User
                       </button>
                       <button
                         onClick={() => handleReport(friendId)}
-                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded text-left text-sm"
+                        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-500/20 rounded-lg text-left text-sm text-red-400 transition"
                       >
                         <Flag className="w-4 h-4" />
-                        Report
+                        Report User
                       </button>
                     </div>
                   )}
@@ -377,19 +387,25 @@ console.log("Active Friend:", user);
       </div>
 
       {/* 🟦 Right Panel - Chat Window */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-gradient-to-b from-[#3a2a5a] to-[#2a1a4a] overflow-hidden">
         {/* Header */}
-        <div className={`p-4  ${activeFriend
-              ?"border-b-2":"border-b-0" } border-gray-300 bg-gray-100 text-black flex items-center justify-between`}>
+        <div className={`sticky top-0 z-10 p-6 transition-all duration-300 ${activeFriend
+              ?" border-b border-[#5a4a7a]":"border-b-0" }  text-white flex items-center justify-between`}>
           {activeFriend ? (
             <>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4 ">
+                <button
+                  onClick={() => setActiveFriend(null)}
+                  className="md:hidden p-2 hover:bg-[#5a4a7a] rounded-lg transition"
+                >
+                  ←
+                </button>
                 <div className="relative">
                   {activeFriend.user.profilePicture ? (
                     <img
                       src={activeFriend.user.profilePicture}
                       alt={`${activeFriend.user.firstName} ${activeFriend.user.lastName}`}
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-12 h-12 rounded-full object-cover ring-2 ring-[#6b4fd4]"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                       }}
@@ -399,48 +415,52 @@ console.log("Active Friend:", user);
                       src={`https://ui-avatars.com/api/?name=${activeFriend.user.firstName}`} 
                       unoptimized 
                       alt="avatar" 
-                      width={40} 
-                      height={40} 
-                      className="w-10 h-10 rounded-full object-cover bg-red-400" 
+                      width={48} 
+                      height={48} 
+                      className="w-12 h-12 rounded-full object-cover bg-gradient-to-br from-pink-500 to-red-500" 
                     />
                   )}
                   {onlineStatus.get(activeFriend.user._id)?.isOnline && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white bg-green-500" />
+                    <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#4a3a6a] bg-green-500" />
                   )}
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold">
                     {activeFriend.user.firstName} {activeFriend.user.lastName}
                   </h2>
-                  <p className="text-sm text-gray-500">
+                  <p className={`text-sm ${onlineStatus.get(activeFriend.user._id)?.isOnline ? "text-green-400" : "text-gray-400"}`}>
                     {onlineStatus.get(activeFriend.user._id)?.isOnline 
-                      ? "Online" 
-                      : "Offline"}
+                      ? "🟢 Online" 
+                      : "⚫ Offline"}
                   </p>
                 </div>
               </div>
             </>
-          ) : null}
+          ) : (
+            <div className="flex items-center gap-3 text-gray-400 ">
+              {/* <MessageCircle className="w-6 h-6" />
+              <p>Select a chat to continue</p> */}
+            </div>
+          )}
         </div>
 
         {/* Chat area */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-3 no-scrollbar">
+        <div className="hidden md:block flex-1 p-4 md:p-6 overflow-y-auto space-y-4 no-scrollbar">
           {loading ? (
             <div className="flex justify-center items-center h-full text-gray-400">
-              <Loader2 className="animate-spin w-5 h-5" /> Loading...
+              <Loader2 className="animate-spin w-6 h-6 mr-2" /> Loading messages...
             </div>
           ) : !activeFriend ? (
-            <div className="w-full min-h-full flex flex-col items-center justify-center ">
-              <Image src="https://res.cloudinary.com/djamamkqn/image/upload/v1761566933/email-envelope-inbox-shape-social-media-notification-icon-speech-bubbles-3d-cartoon-banner-website-ui-pink-background-3d-rendering-illustration-removebg-preview_wx55fj.png" alt="Chat Illustration" width={150} height={150} className="" />
-            <div className="flex justify-center items-center h-full text-gray-600 text-3xl mb-2">
-              Send and receive messages with your friends! 
-            </div>
-            <span className="text-gray-600 text-xl">Select a friend from the left to start chatting.</span>
+            <div className="w-full h-full flex flex-col items-center justify-center">
+              <MessageCircle className="w-24 h-24 text-[#6b4fd4] opacity-30 mb-4" />
+              <p className="text-2xl font-bold text-white mb-2">No chat selected</p>
+              <p className="text-gray-400 text-center">Select a friend from the list to start messaging</p>
             </div>
           ) : messages.length === 0 ? (
-            <p className="text-gray-400 text-center">
-              No messages yet — say hi 👋
-            </p>
+            <div className="w-full h-full flex flex-col items-center justify-center">
+              <Smile className="w-16 h-16 text-[#6b4fd4] opacity-30 mb-4" />
+              <p className="text-gray-400 text-center">No messages yet — say hi 👋</p>
+            </div>
           ) : (
             messages.map((msg) => {
               const isYou = msg.sender_id === userId;
@@ -458,13 +478,13 @@ console.log("Active Friend:", user);
               return (
                 <div
                   key={msg.id}
-                  className={`flex ${isYou ? "justify-end" : "justify-start"} mb-2`}
+                  className={`flex ${isYou ? "justify-end" : "justify-start"} mb-1`}
                 >
                   <div
-                    className={`max-w-xs px-4 py-2 rounded-2xl shadow-md ${
+                    className={`max-w-xs md:max-w-md lg:max-w-lg px-5 py-3 rounded-2xl shadow-md transition-all ${
                       isYou
-                        ? "bg-red-600 text-white rounded-br-none"
-                        : "bg-gradient-to-r from-purple-900 to-pink-900 text-black rounded-bl-none"
+                        ? "bg-gradient-to-r from-pink-500 to-red-600 text-white rounded-br-none"
+                        : "bg-[#4a3a6a] text-gray-100 rounded-bl-none border border-[#5a4a7a]"
                     }`}
                   >
                     {isImage && msg.file_url && (
@@ -502,20 +522,24 @@ console.log("Active Friend:", user);
                           href={fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 p-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm"
+                          className={`flex items-center gap-2 p-3 rounded-lg text-sm transition ${
+                            isYou 
+                              ? "bg-white/20 hover:bg-white/30" 
+                              : "bg-[#3a2a5a] hover:bg-[#5a4a7a]"
+                          }`}
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                           </svg>
                           <span>{isPdf ? "PDF Document" : "Document"}</span>
-                          <span className="text-xs text-gray-500">(Click to open)</span>
+                          <span className="text-xs opacity-75">(Click to open)</span>
                         </a>
                       </div>
                     )}
                     {msg.message && (
                       <p className="break-words">{msg.message}</p>
                     )}
-                    <div className={`text-xs mt-1 ${isYou ? "text-white/80" : "text-gray-500"} text-right`}>
+                    <div className={`text-xs mt-2 ${isYou ? "text-white/70" : "text-gray-400"} text-right`}>
                       {new Date(msg.created_at).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -531,7 +555,7 @@ console.log("Active Friend:", user);
 
         {/* Input */}
         {activeFriend && (
-          <div className="p-3 flex items-center gap-2 bg-gray-100 sticky bottom-0">
+          <div className="p-4 md:p-6 flex items-center gap-3 bg-[#4a3a6a] border-t border-[#5a4a7a] sticky bottom-0">
             <input
               type="file"
               ref={fileInputRef}
@@ -542,19 +566,19 @@ console.log("Active Friend:", user);
             />
             <label
               htmlFor="file-upload"
-              className="cursor-pointer p-2 hover:bg-gray-200 rounded-full"
+              className="cursor-pointer p-2 hover:bg-[#5a4a7a] rounded-full transition"
               title="Upload file"
             >
-              <ImageIcon className="w-5 h-5 text-gray-600" />
+              <ImageIcon className="w-5 h-5 text-gray-300 hover:text-white transition" />
             </label>
             
             <div className="relative" ref={emojiPickerRef}>
               <button
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="p-2 hover:bg-gray-200 rounded-full"
+                className="p-2 hover:bg-[#5a4a7a] rounded-full transition"
                 title="Add emoji"
               >
-                <Smile className="w-5 h-5 text-gray-600" />
+                <Smile className="w-5 h-5 text-gray-300 hover:text-white transition" />
               </button>
               {showEmojiPicker && (
                 <div className="absolute bottom-full mb-2 left-0 z-50">
@@ -566,7 +590,7 @@ console.log("Active Friend:", user);
             <input
               type="text"
               placeholder="Type a message..."
-              className="flex-1 bg-gradient-to-r from-purple-900 to-pink-900 text-black px-3 py-2 rounded-full outline-none"
+              className="flex-1 bg-[#3a2a5a] text-white px-4 py-3 rounded-full outline-none placeholder-gray-500 focus:ring-2 focus:ring-[#6b4fd4] transition"
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => {
@@ -579,13 +603,13 @@ console.log("Active Friend:", user);
             <button
               onClick={() => handleSend()}
               disabled={uploadingFile || (!text.trim() && !fileInputRef.current?.files?.length)}
-              className="bg-red-600 text-white p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-gradient-to-r from-pink-500 to-red-600 hover:shadow-lg hover:shadow-pink-500/50 text-white p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               title="Send message"
             >
               {uploadingFile ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
-                <Send className="w-4 h-4" />
+                <Send className="w-5 h-5" />
               )}
             </button>
           </div>

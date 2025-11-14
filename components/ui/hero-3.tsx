@@ -46,7 +46,7 @@ export const AnimatedMarqueeHero: React.FC<AnimatedMarqueeHeroProps> = ({
   return (
     <section
       className={cn(
-        "relative w-full h-screen overflow-hidden bg-gradient-to-r from-purple-900 to-pink-900 text-black flex flex-col items-center pt-20 text-center px-4",
+        "relative w-full h-screen overflow-hidden bg-[#5940df] text-white flex flex-col items-center pt-20 text-center px-4",
         className
       )}
     >
@@ -73,7 +73,7 @@ export const AnimatedMarqueeHero: React.FC<AnimatedMarqueeHeroProps> = ({
               },
             },
           }}
-          className="text-5xl md:text-7xl font-bold tracking-tighter text-black"
+          className="text-5xl md:text-7xl font-bold tracking-tighter text-white"
         >
           {typeof title === 'string' ? (
             title.split(" ").map((word, i) => (

@@ -16,6 +16,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [profileImageError, setProfileImageError] = useState(false);
   const { user, loading, logout } = useUserProfile();
 
@@ -25,7 +26,7 @@ const Navbar = () => {
   }, [user?.profilePicture]);
 
   return (
-    <nav className="sticky top-0 z-50 bg-gradient-to-r from-purple-900 to-pink-900 text-black ">
+    <nav className="sticky top-0 z-50 bg-[#5940df] text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo */}
@@ -39,7 +40,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-2 lg:gap-4">
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-lg transition-all duration-300"
+              className="flex items-center gap-2 px-4 py-2  rounded-lg transition-all duration-300"
             >
               <Video className="w-5 h-5" />
               <span className="font-medium">Video Chat</span>
@@ -47,7 +48,7 @@ const Navbar = () => {
 
             {/* <Link
               href="/dating"
-              className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-lg transition-all duration-300"
+              className="flex items-center gap-2 px-4 py-2  rounded-lg transition-all duration-300"
             >
               <Heart className="w-5 h-5" />
               <span className="font-medium">Dating</span>
@@ -55,7 +56,7 @@ const Navbar = () => {
 
             <Link
               href="/messages"
-              className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-lg transition-all duration-300"
+              className="flex items-center gap-2 px-4 py-2  rounded-lg transition-all duration-300"
             >
               <MessageCircle className="w-5 h-5" />
               <span className="font-medium">Messages</span>
@@ -63,7 +64,7 @@ const Navbar = () => {
 
             <Link
               href="/friend-requests"
-              className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 rounded-lg transition-all duration-300 relative"
+              className="flex items-center gap-2 px-4 py-2  rounded-lg transition-all duration-300 relative"
             >
               <UserPlus className="w-5 h-5" />
               <span className="font-medium">Requests</span>
@@ -109,30 +110,100 @@ const Navbar = () => {
 
                 {/* Profile Dropdown */}
                 {dropdownOpen && user && (
-                  <div className="absolute right-0 top-14 bg-gradient-to-r from-purple-900 to-pink-900 border border-gray-200 shadow-lg rounded-md p-4 w-56">
-                    {user.profilePicture && (
-                      <div className="mb-3 flex justify-center">
-                        <img
-                          src={user.profilePicture}
-                          alt={`${user.firstName || user.firstname || ''} ${user.lastName || user.lastname || ''}`}
-                          className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
+                  <div className="no-scrollbar absolute right-0 top-14 bg-[#3a2a5a] border border-gray-700 shadow-2xl rounded-2xl p-6 w-80 max-h-96 overflow-y-auto">
+                    {/* Header Section with Avatar and Name */}
+                    <div className="flex items-start justify-between mb-6 pb-6 border-b border-gray-600">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
+                          {user.profilePicture && !profileImageError ? (
+                            <img
+                              src={user.profilePicture}
+                              alt={`${user.firstName || user.firstname || ''} ${user.lastName || user.lastname || ''}`}
+                              className="w-full h-full object-cover"
+                              onError={() => setProfileImageError(true)}
+                            />
+                          ) : (
+                            <span>{(user.firstName || user.firstname || 'U')[0].toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-white font-bold text-lg">
+                            {user.firstName || user.firstname || ''} {user.lastName || user.lastname || ''}
+                          </p>
+                          <p className="text-gray-400 text-sm flex items-center gap-1">
+                            ID: {user.id?.slice(0, 10) || 'N/A'}
+                            <button className="text-gray-400 hover:text-white" title="Copy ID">📋</button>
+                          </p>
+                        </div>
                       </div>
-                    )}
-                    <p className="text-sm text-gray-700 mb-2">
-                      <span className="font-semibold">Name:</span>{" "}
-                      {user.firstName || user.firstname || ''} {user.lastName || user.lastname || ''}
-                    </p>
-                    <p className="text-sm text-gray-700 mb-2">
-                      <span className="font-semibold">Email:</span> {user.email}
-                    </p>
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">Role:</span>{" "}
-                      {user.role || "N/A"}
-                    </p>
+                      <Link href="/profile" className="text-red-500 hover:text-red-400">
+                        <span className="text-lg">✏️</span>
+                      </Link>
+                    </div>
+
+                    {/* Premium Section */}
+                    <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-4 mb-6 flex items-start justify-between">
+                      <div>
+                        <p className="text-white font-bold flex items-center gap-2">
+                          👑 Monkey Plus
+                        </p>
+                        <p className="text-purple-100 text-sm mt-1">Get More Gender Filters</p>
+                      </div>
+                      <button className="bg-yellow-400 text-white font-bold px-4 py-1 rounded-full text-sm hover:bg-yellow-300 transition">
+                        Join
+                      </button>
+                    </div>
+
+                   
+
+                    {/* User Info Section */}
+                    <div className="space-y-3 mb-6 bg-[#2a1a4a] rounded-xl p-4 ">
+                      <div className="flex items-center justify-between text-gray-300">
+                        <span className="flex items-center gap-2">📅 Birthday</span>
+                        <span>{user.dateOfBirth || user.dob || 'Not set'}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-gray-300">
+                        <span className="flex items-center gap-2">👥 Gender</span>
+                        <span className="capitalize">{user.role || user.gender || 'Not set'}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-gray-300">
+                        <span className="flex items-center gap-2">✉️Email</span>
+                        <span className="text-xs">{user.email || 'Not set'}</span>
+                      </div>
+                    </div>
+
+                    {/* Footer Links */}
+                    <div className="space-y-2 border-t border-gray-600 pt-4">
+                      
+                      <button
+                        onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+                        className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-[#4a3a6a] transition flex items-center gap-2"
+                      >
+                         More
+                        <span className={`ml-auto transition-transform ${moreMenuOpen ? 'rotate-180' : ''}`}>›</span>
+                      </button>
+
+                      {/* More Menu Items */}
+                      {moreMenuOpen && (
+                        <div className="space-y-1 ml-2 border-l border-gray-600 pl-3 mt-2">
+                          <Link href="/about-us" className="text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-[#4a3a6a] transition flex items-center gap-2 text-sm">
+                            ℹ️ About Us
+                          </Link>
+                          <Link href="/contact-us" className="text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-[#4a3a6a] transition flex items-center gap-2 text-sm">
+                            📧 Contact Us
+                          </Link>
+                          <Link href="/faq" className="text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-[#4a3a6a] transition flex items-center gap-2 text-sm">
+                            ❓ FAQ
+                          </Link>
+                          <Link href="/terms-conditions" className="text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-[#4a3a6a] transition flex items-center gap-2 text-sm">
+                            📋 Terms & Conditions
+                          </Link>
+                          <Link href="/privacy-policy" className="text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-[#4a3a6a] transition flex items-center gap-2 text-sm">
+                            🔒 Privacy Policy
+                          </Link>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </>
@@ -160,7 +231,7 @@ const Navbar = () => {
 
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-black p-2 hover:bg-gray-100 rounded-lg transition-all duration-300"
+              className="text-white p-2  rounded-lg transition-all duration-300"
             >
               {isMobileMenuOpen ? (
                 <X className="w-6 h-6" />
@@ -173,7 +244,7 @@ const Navbar = () => {
 
         {/* Mobile Menu - Icons Only */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 flex justify-around border-t border-gray-200 bg-gradient-to-r from-purple-900 to-pink-900">
+          <div className="md:hidden py-4 flex justify-around border-t border-gray-200 bg-[#5940df]">
             <Link
               href="/dashboard"
               className="flex flex-col items-center text-gray-700 hover:text-red-500"

@@ -40,7 +40,7 @@ const links = [
 
 export default function FooterSection() {
     return (
-        <footer className="py-16 md:py-32 bg-gray-300 w-full">
+        <footer className="py-16 md:py-32 border-t-2 border-[#1989fa] w-full">
             <div className="mx-auto max-w-5xl px-6">
                 <Link
                     href="/"
@@ -53,7 +53,7 @@ export default function FooterSection() {
                         <Link
                             key={index}
                             href={link.href}
-                            className="text-black block duration-150">
+                            className="text-white block duration-150">
                             <span>{link.title}</span>
                         </Link>
                     ))}
@@ -65,7 +65,7 @@ export default function FooterSection() {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Social Link 1" // Generic label
-                        className="text-black block">
+                        className="text-white block">
                         <Share2 className="size-6" /> {/* Generic "Share" icon */}
                     </Link>
                     <Link
@@ -73,7 +73,7 @@ export default function FooterSection() {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Social Link 2"
-                        className="text-black block">
+                        className="text-white block">
                         <MessageCircle className="size-6" /> {/* Generic "Message" icon */}
                     </Link>
                     <Link
@@ -81,7 +81,7 @@ export default function FooterSection() {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Social Link 3"
-                        className="text-black block">
+                        className="text-white block">
                         <LinkIcon className="size-6" /> {/* Generic "Link" icon */}
                     </Link>
                     <Link
@@ -89,7 +89,7 @@ export default function FooterSection() {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Social Link 4"
-                        className="text-black block">
+                        className="text-white block">
                         <Globe className="size-6" /> {/* Generic "Globe" (website/world) icon */}
                     </Link>
                     <Link
@@ -97,7 +97,7 @@ export default function FooterSection() {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Social Link 5"
-                        className="text-black block">
+                        className="text-white block">
                         <Send className="size-6" /> {/* Generic "Send" icon */}
                     </Link>
                     <Link
@@ -105,11 +105,11 @@ export default function FooterSection() {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Social Link 6"
-                        className="text-black block">
+                        className="text-white block">
                         <Feather className="size-6" /> {/* Generic "Feather" (post/write) icon */}
                     </Link>
                 </div>
-                <span className="text-black block text-center text-sm"> © {new Date().getFullYear()} Tailark, All rights reserved</span>
+                <span className="text-white block text-center text-sm"> © {new Date().getFullYear()} Tailark, All rights reserved</span>
             </div>
         </footer>
     )

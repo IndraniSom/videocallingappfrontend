@@ -83,13 +83,13 @@ export default function RuixenCard04({
         : messages;
 
     return (
-        <div className="w-full min-h-screen px-6 pb-6 bg-gradient-to-r from-purple-900 to-pink-900 flex flex-col">
+        <div className="w-full min-h-screen px-6 pb-6 bg-[#5940df] flex flex-col">
             {/* Header */}
             {/* <header className="flex justify-between items-center border-b border-gray-300 dark:border-gray-700 pb-3 mb-6">
                 <div className="flex items-center gap-3">
-                    <Users className="w-8 h-8 text-black " />
+                    <Users className="w-8 h-8 text-white " />
                     <div>
-                        <h2 className="text-2xl font-semibold text-black ">
+                        <h2 className="text-2xl font-semibold text-white ">
                             {chatName}
                         </h2>
                         <p className="italic text-sm text-gray-600 dark:text-gray-400">
@@ -108,7 +108,7 @@ export default function RuixenCard04({
             {/* Body */}
             <main className="flex flex-1 overflow-hidden rounded-xl border border-gray-300 dark:border-gray-700">
                 {/* Participants List */}
-                <aside className="w-56 bg-gradient-to-r from-purple-900 to-pink-900 text-black border-r-[1px] border-black p-4 overflow-y-auto">
+                <aside className="w-56 bg-[#5940df] text-white border-r-[1px] border-black p-4 overflow-y-auto">
                     {uniqueSenders.map((sender) => {
                         const isSelected = selectedSender === sender.name;
                         return (
@@ -122,7 +122,7 @@ export default function RuixenCard04({
                                 className={cn(
                                     "flex items-center gap-3 w-full p-3 mb-3 rounded-lg transition-colors",
                                     isSelected
-                                        ? "bg-black dark:bg-gradient-to-r from-purple-900 to-pink-900 text-white dark:text-black"
+                                        ? "bg-black dark:bg-[#5940df] text-white dark:text-white"
                                         : "hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-900 "
                                 )}
                             >
@@ -152,7 +152,7 @@ export default function RuixenCard04({
                 </aside>
 
                 {/* Messages */}
-                <section className="flex flex-col  px-6 pb-6 overflow-y-auto bg-gradient-to-r from-purple-900 to-pink-900 ">
+                <section className="flex flex-col  px-6 pb-6 overflow-y-auto bg-[#5940df] ">
                     {filteredMessages.length === 0 ? (
                         <p className="text-center text-gray-500 dark:text-gray-400">
                             No messages to display.
@@ -172,7 +172,7 @@ export default function RuixenCard04({
                                         className="rounded-full ring-1 ring-gray-400 dark:ring-gray-600"
                                     />
                                     <div>
-                                        <p className="font-semibold text-black ">
+                                        <p className="font-semibold text-white ">
                                             {message.sender.name}
                                         </p>
                                         <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -200,7 +200,7 @@ export default function RuixenCard04({
                                                 className={cn(
                                                     "px-2 py-1 rounded-md text-sm transition-colors",
                                                     reaction.reacted
-                                                        ? "bg-gray-300 dark:bg-gray-700 text-black "
+                                                        ? "bg-gray-300 dark:bg-gray-700 text-white "
                                                         : "bg-gray-100  text-gray-700 dark:text-gray-400",
                                                     "hover:bg-gray-200 dark:hover:bg-gray-600"
                                                 )}
@@ -225,13 +225,13 @@ export default function RuixenCard04({
                     placeholder="Write your message..."
                     className={cn(
                         "flex-1 px-5 py-3 rounded-full border border-gray-300 dark:border-gray-700",
-                        "bg-gradient-to-r from-purple-900 to-pink-900  text-black  placeholder-gray-500 dark:placeholder-gray-400",
+                        "bg-[#5940df]  text-white  placeholder-gray-500 dark:placeholder-gray-400",
                         "focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white transition"
                     )}
                 />
                 <button
                     aria-label="Send message"
-                    className="p-3 rounded-full bg-black dark:bg-gradient-to-r from-purple-900 to-pink-900 text-white dark:text-black hover:brightness-90 transition"
+                    className="p-3 rounded-full bg-black dark:bg-[#5940df] text-white dark:text-white hover:brightness-90 transition"
                 >
                     <Send className="w-6 h-6" />
                 </button>
