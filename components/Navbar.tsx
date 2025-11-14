@@ -12,14 +12,21 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { Home, Clock, Cloud} from "lucide-react";
 
+const navItems = [
+  { id: "/dashboard", label: "Home", Icon: Home },
+  { id: "/messages", label: "Recent", Icon: MessageCircle },
+  { id: "/friend-requests", label: "Likes", Icon: User },
+  { id: "cloud", label: "Cloud", Icon: Cloud },
+];
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [profileImageError, setProfileImageError] = useState(false);
   const { user, loading, logout } = useUserProfile();
-
+  const [active, setActive] = useState("/dashboard");
   // Reset profile image error when user changes
   useEffect(() => {
     setProfileImageError(false);
@@ -37,39 +44,68 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-2 lg:gap-4">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 px-4 py-2  rounded-lg transition-all duration-300"
-            >
-              <Video className="w-5 h-5" />
-              <span className="font-medium">Video Chat</span>
-            </Link>
+         <div className="flex-1 flex items-center justify-center">
+        <div
+          role="navigation"
+          aria-label="Primary"
+          className="relative inline-flex items-center p-1 rounded-full border border-white/30 bg-white/5"
+          style={{ padding: 6 }} // small visual padding like the image
+        >
+          {/* pill background (outline) */}
+          <div className="relative flex items-center gap-4 px-3 py-1 rounded-full">
+            {navItems.map((item) => {
+              const isActive = item.id === active;
+              return (
+                <Link
+                  key={item.id}
+                  href={`${item.id}`}>
+                <button
+                  key={item.id}
+                  onClick={() => setActive(item.id)}
+                  aria-label={item.label}
+                  className="relative z-10 flex items-center justify-center w-11 h-11 rounded-full focus:outline-none"
+                >
+                  {/* Yellow circular indicator behind the active icon */}
+                  <span
+                    aria-hidden
+                    className={`absolute inset-0 flex items-center justify-center transition-all duration-200`}
+                  >
+                    <span
+                      className={`transform transition-all duration-200 ${
+                        isActive ? "scale-100" : "scale-0"
+                      }`}
+                      style={{
+                        width: 38,
+                        height: 28,
+                        borderRadius: 9999,
+                        background:
+                          "linear-gradient(90deg, #FFFB00 0%, #FFE600 100%)",
+                        boxShadow: isActive ? "0 6px 18px rgba(255, 235, 59, 0.25)" : "none",
+                        display: "inline-block",
+                      }}
+                    />
+                  </span>
 
-            {/* <Link
-              href="/dating"
-              className="flex items-center gap-2 px-4 py-2  rounded-lg transition-all duration-300"
-            >
-              <Heart className="w-5 h-5" />
-              <span className="font-medium">Dating</span>
-            </Link> */}
-
-            <Link
-              href="/messages"
-              className="flex items-center gap-2 px-4 py-2  rounded-lg transition-all duration-300"
-            >
-              <MessageCircle className="w-5 h-5" />
-              <span className="font-medium">Messages</span>
-            </Link>
-
-            <Link
-              href="/friend-requests"
-              className="flex items-center gap-2 px-4 py-2  rounded-lg transition-all duration-300 relative"
-            >
-              <UserPlus className="w-5 h-5" />
-              <span className="font-medium">Requests</span>
-            </Link>
+                  {/* The icon itself sits above the yellow indicator */}
+                  <item.Icon
+                    className={`relative ${isActive ? "text-black" : "text-white/90"}`}
+                    size={18}
+                  />
+                </button>
+                </Link>
+              );
+            })}
           </div>
+
+          {/* Outer rounded border to match screenshot (thin light border) */}
+          <span
+            className="pointer-events-none absolute inset-0 rounded-full"
+            style={{
+              boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.06)",
+            }}
+          />
+        </div>
+      </div>
 
           {/* Right Side (Desktop) */}
           <div className="hidden md:flex items-center gap-4 relative">
@@ -145,7 +181,7 @@ const Navbar = () => {
                     <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-4 mb-6 flex items-start justify-between">
                       <div>
                         <p className="text-white font-bold flex items-center gap-2">
-                          👑 Monkey Plus
+                          👑 Subscription Plans
                         </p>
                         <p className="text-purple-100 text-sm mt-1">Get More Gender Filters</p>
                       </div>
@@ -245,37 +281,9 @@ const Navbar = () => {
         {/* Mobile Menu - Icons Only */}
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 flex justify-around border-t border-gray-200 bg-[#5940df]">
-            <Link
-              href="/dashboard"
-              className="flex flex-col items-center text-gray-700 hover:text-red-500"
-            >
-              <Video className="w-6 h-6" />
-              <span className="text-xs mt-1">Chat</span>
-            </Link>
+           
 
-            {/* <Link
-              href="/dating"
-              className="flex flex-col items-center text-gray-700 hover:text-red-500"
-            >
-              <Heart className="w-6 h-6" />
-              <span className="text-xs mt-1">Dating</span>
-            </Link> */}
-
-            <Link
-              href="/messages"
-              className="flex flex-col items-center text-gray-700 hover:text-red-500"
-            >
-              <MessageCircle className="w-6 h-6" />
-              <span className="text-xs mt-1">Messages</span>
-            </Link>
-
-            <Link
-              href="/friend-requests"
-              className="flex flex-col items-center text-gray-700 hover:text-red-500 relative"
-            >
-              <UserPlus className="w-6 h-6" />
-              <span className="text-xs mt-1">Requests</span>
-            </Link>
+           
 
             {user && (
               <Link

@@ -198,7 +198,7 @@
 
     return (
       <div className="w-full h-full md:h-screen bg-[#5940df] flex items-center justify-center ">
-      <div className="w-full max-w-fit bg-[#654bf1] -mt-20 p-5 rounded-lg flex flex-col md:flex-row gap-5 shadow-lg">
+      <div className="w-full max-w-fit bg-[#654bf1] -mt-20 px-6 pt-6 rounded-lg flex flex-col md:flex-row gap-5 shadow-lg">
         {/* Left column: local video + controls + pre-chat UI */}
         <div className="md:w-1/2 w-full flex flex-col items-center gap-6 rounded-2xl mt-16 md:mt-0">
           
