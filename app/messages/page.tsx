@@ -26,6 +26,8 @@ export default function ChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const { user, loading: userLoading } = useUserProfile();
   const userId = user?._id || user?.id || "";
@@ -179,14 +181,17 @@ export default function ChatPage() {
   
   // Handle file selection
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleSend(file);
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setSelectedFile(file);
+  setPreviewUrl(URL.createObjectURL(file));
+
+  if (fileInputRef.current) {
+    fileInputRef.current.value = "";
+  }
+};
+
   
   // Handle emoji selection
   const onEmojiClick = (emojiData: any) => {
@@ -271,12 +276,12 @@ export default function ChatPage() {
   }, [messages]);
 
   return (
-    <div className="w-full h-screen bg-[#5940df] flex items-center justify-center">
-      <div className="w-full max-w-5xl bg-[#654bf1] px-2 pt-2 pb-2 rounded-lg shadow-lg mx-4 my-4" style={{ height: "calc(100vh - 2rem)" }}>
-        <div className="h-full flex flex-col md:flex-row gap-5 overflow-hidden">
+    <div className="w-full min-h-screen bg-[#5940df] flex items-center justify-center">
+      <div className="w-full max-w-5xl bg-[#654bf1] px-2 pt-2 pb-2 rounded-lg shadow-lg mx-4 my-4 h-[520px]">
+        <div className=" h-125 flex flex-col md:flex-row gap-5 overflow-hidden">
           
           {/* 🟩 Left Sidebar - Friends List */}
-          <div className={`${activeFriend ? 'hidden md:flex' : 'flex'} md:w-96 w-full bg-[#4a3a6a] flex flex-col rounded-2xl overflow-hidden`}>
+          <div className={`${activeFriend ? 'hidden md:flex' : 'flex'} md:w-96 w-full bg-[#4a3a6a] flex flex-col rounded-2xl overflow-hidden h-full`}>
             <div className="p-6 border-b border-[#5a4a7a] text-xl font-bold bg-gradient-to-r from-[#6b4fd4] to-[#5940df] text-white flex gap-3 items-center">
               <MessageCircle className="w-6 h-6" /> Messages
             </div>
@@ -386,7 +391,7 @@ export default function ChatPage() {
           </div>
 
           {/* 🟦 Right Panel - Chat Window */}
-          <div className="flex-1 flex flex-col bg-gradient-to-b from-[#3a2a5a] to-[#2a1a4a] rounded-2xl overflow-hidden">
+          <div className=" flex-1 flex flex-col bg-gradient-to-b from-[#3a2a5a] to-[#2a1a4a] rounded-2xl overflow-hidden">
             {/* Header */}
             <div className={`p-6 transition-all duration-300 ${activeFriend ? "border-b border-[#5a4a7a]" : "border-b-0"} text-white flex items-center justify-between rounded-t-2xl`}>
               {activeFriend ? (
@@ -515,7 +520,7 @@ export default function ChatPage() {
                           <img 
                             src={fileUrl} 
                             alt="Shared image" 
-                            className="max-w-full h-auto rounded-lg mb-2"
+                            className="max-w-[180px] md:max-w-[240px] lg:max-w-[300px] rounded-lg mb-2"
                             onError={(e) => {
                               console.error("Image load error:", fileUrl);
                               e.currentTarget.style.display = 'none';
@@ -576,10 +581,42 @@ export default function ChatPage() {
               )}
               <div ref={bottomRef}></div>
             </div>
+{previewUrl && (
+  <div className="px-6 py-3 bg-[#3a2a5a] border-t border-[#5a4a7a] flex items-center gap-4">
+    <img
+      src={previewUrl}
+      alt="preview"
+      className="w-24 h-24 object-cover rounded-lg"
+    />
+    <div className="flex gap-2">
+      <button
+        onClick={() => {
+          setPreviewUrl(null);
+          setSelectedFile(null);
+        }}
+        className="px-4 py-2 rounded-lg bg-gray-600 text-white"
+      >
+        Cancel
+      </button>
+      <button
+        onClick={() => {
+          handleSend(selectedFile!);
+          setPreviewUrl(null);
+          setSelectedFile(null);
+        }}
+        className="px-4 py-2 rounded-lg bg-pink-500 text-white"
+      >
+        Send
+      </button>
+    </div>
+  </div>
+)}
 
             {/* Input */}
             {activeFriend && (
+              
               <div className="p-6 flex items-center gap-3 bg-[#4a3a6a] border-t border-[#5a4a7a] rounded-b-2xl">
+                
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -625,11 +662,17 @@ export default function ChatPage() {
                   }}
                 />
                 <button
-                  onClick={() => handleSend()}
-                  disabled={uploadingFile || (!text.trim() && !fileInputRef.current?.files?.length)}
-                  className="bg-gradient-to-r from-pink-500 to-red-600 hover:shadow-lg hover:shadow-pink-500/50 text-white p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  title="Send message"
-                >
+  onClick={() => {
+    if (selectedFile) {
+      handleSend(selectedFile);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+    } else {
+      handleSend();
+    }
+  }}
+>
+
                   {uploadingFile ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (

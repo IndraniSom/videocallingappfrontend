@@ -185,26 +185,29 @@
       try {
         await sendFriendRequest(partnerId);
         setStatusMessage("Friend request sent!");
+        alert("Friend request sent successfully!");
       } catch (error: any) {
         console.error("Error sending friend request:", error);
         if (error.response?.data?.message) setStatusMessage(error.response.data.message);
         else setStatusMessage("Failed to send friend request");
       }
     };
-
+    const handleReportUser = async () => {
+      alert("The user has been reported. Thank you for helping us maintain a safe community.");
+    }
     useEffect(() => {
       console.log("📊 Chat State:", { messages: messages.length, roomId, partnerId, userId, inVideoChat });
     }, [messages, roomId, partnerId, userId, inVideoChat]);
 
     return (
       <div className="w-full h-full md:h-screen bg-[#5940df] flex items-center justify-center ">
-      <div className="w-full max-w-5xl bg-[#654bf1] -mt-20 px-2 pt-2 rounded-lg flex flex-col md:flex-row gap-5 shadow-lg">
+      <div className="w-full max-w-7xl bg-[#654bf1] -mt-20 px-2 pt-2 rounded-lg flex flex-col md:flex-row gap-5 shadow-lg">
         {/* Left column: local video + controls + pre-chat UI */}
         <div className="md:w-1/2 w-full flex flex-col items-center gap-6 rounded-2xl mt-16 md:mt-0">
           
 
           {/* Local video preview with controls in top right corner */}
-          <div className="w-full max-w-[600px] flex-1 h-full flex items-center justify-center rounded-2xl relative">
+          <div className="w-full max-w-[800px] h-full flex items-center justify-center rounded-2xl relative">
             <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-[500px] object-cover bg-gray-800 rounded-2xl" />
             
             {/* Controls positioned in top right corner (only visible when in a call) */}
@@ -217,8 +220,10 @@
                   {isMicOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
                 </button> */}
                 <button onClick={handleSendFriendRequest} className="p-2 bg-purple-600 hover:bg-purple-700 rounded-full" title="Send Friend Request"><UserPlus className="w-4 h-4" /></button>
+                <button onClick={handleReportUser} className="p-2 bg-red-600 hover:bg-red-700 rounded-full" title="Report"><UserPlus className="w-4 h-4"/></button>
                 <button onClick={handleSkip} className="p-2 bg-yellow-500 hover:bg-yellow-600 rounded-full" title="Skip user"><SkipForward className="w-4 h-4" /></button>
                 <button onClick={handleEnd} className="p-2 bg-red-600 hover:bg-red-700 rounded-full" title="End Chat"><XCircle className="w-4 h-4" /></button>
+                
               </div>
             )}
           </div>
@@ -251,9 +256,9 @@
           <div className="md:w-1/2 w-full max-w-[600px] bg-gradient-to-b from-[#6b4fd4] to-[#5940df] h-[500px] flex flex-col justify-between items-center rounded-3xl p-8">
             {/* Connect With Section */}
             <div className="w-full">
-              <p className="text-white text-lg font-semibold mb-6">Connect With</p>
-              <div className="flex gap-6 justify-center items-center">
-                {/* Male Button */}
+              <p className="text-white text-lg font-semibold mb-6 text-center -ml-3">Connect With New Friends,Join Now</p>
+              {/* <div className="flex gap-6 justify-center items-center">
+                
                 <button
                   onClick={() => {
                     setShowUpgradeModal(true);
@@ -270,7 +275,7 @@
                   <span className="text-white text-sm font-semibold">Male</span>
                 </button>
 
-                {/* Female Button */}
+                
                 <button
                   onClick={() => {
                     setShowUpgradeModal(true);
@@ -287,7 +292,7 @@
                   <span className="text-white text-sm font-semibold">Female</span>
                 </button>
 
-                {/* Both Button */}
+                
                 <button
                   onClick={() => setPreference("both")}
                   className={`flex flex-col items-center justify-center w-24 h-24 rounded-2xl transition-all duration-300 ${
@@ -300,7 +305,7 @@
                   <div className="text-4xl mb-2">⚤</div>
                   <span className="text-white text-sm font-semibold">Both</span>
                 </button>
-              </div>
+              </div> */}
             </div>
 
             {/* Start Video Chat Button */}

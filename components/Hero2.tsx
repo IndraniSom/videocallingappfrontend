@@ -9,12 +9,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { GenderSelectionModal } from "./GenderSelectionModal";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import ProfileSetupModal from './ProfileSetupModal';
+import { X } from "lucide-react";
 export default function Hero2() {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showGenderModal, setShowGenderModal] = useState(false);
   const [selectedGender, setSelectedGender] = useState<'male' | 'female' | null>(null);
   const { user, loading } = useUserProfile();
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
   const { signInWithGoogle } = useAuth();
+  const [googleUserInfo, setGoogleUserInfo] = useState<any>(null);
   const router = useRouter();
 
   const handleGenderSelect = (gender: 'male' | 'female') => {
@@ -35,7 +39,17 @@ export default function Hero2() {
       console.error('Google sign-in failed:', error);
     }
   };
-
+  const handleProfileSetupSubmit = async (gender: 'male' | 'female') => {
+    try {
+      // Complete the sign-up with the selected gender
+      await signInWithGoogle(gender);
+      setShowProfileSetup(false);
+      setShowLoginDialog(false);
+      router.push('/dashboard');
+    } catch (error: any) {
+      console.error('Profile setup failed:', error);
+    }
+  };
   const handleGoogleSignIn = async () => {
     try {
       // Try to sign in without gender first
@@ -101,43 +115,51 @@ export default function Hero2() {
       
 
         {/* Login Dialog */}
-        {showLoginDialog && (
-          <div className="fixed inset-0 bg-white/50 bg-opacity-50 backdrop-blur-md flex items-center justify-center z-50">
-            <div className="relative bg-[#5940df] border-muted rounded-md border px-6 py-12 shadow-md max-w-sm w-full mx-4">
-              <div className="flex flex-col items-center gap-y-2 mb-8">
-                <h1 className="text-2xl font-semibold text-white">Welcome</h1>
+      {showLoginDialog && !showProfileSetup && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="relative bg-gradient-to-br from-[#5940df] to-[#4a30cf] rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-in zoom-in-95 duration-300">
+            <div className="p-6 sm:p-8">
+              <div className="flex flex-col items-center gap-2 mb-6 sm:mb-8">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">Welcome Back</h1>
+                <p className="text-white/70 text-sm text-center">Sign in to continue your journey</p>
               </div>
 
-              {showGenderModal && <GenderSelectionModal onSelect={handleGenderSelect} />}
-
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3 sm:gap-4">
                 <button
                   type="button"
                   onClick={handleGoogleSignIn}
-                  className="w-full text-red-500 border-[1px] border-black rounded-md py-2 flex items-center justify-center gap-2 bg-gray-50 transition"
+                  className="w-full bg-white hover:bg-gray-50 text-gray-800 rounded-xl py-3 sm:py-3.5 flex items-center justify-center gap-3 font-medium transition-all duration-300 hover:shadow-lg hover:scale-105"
                 >
-                  <FcGoogle className="size-5" />
-                  Sign in with Google
+                  <FcGoogle className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <span className="text-sm sm:text-base">Sign in with Google</span>
                 </button>
+                
                 <button
                   type="button"
                   onClick={handleFacebookSignIn}
-                  className="w-full text-blue-600 border-[1px] border-black rounded-md py-2 flex items-center justify-center gap-2 bg-gray-50 transition"
+                  className="w-full bg-[#1877f2] hover:bg-[#166fe5] text-white rounded-xl py-3 sm:py-3.5 flex items-center justify-center gap-3 font-medium transition-all duration-300 hover:shadow-lg hover:scale-105"
                 >
-                  <FaFacebook className="size-5" />
-                  Sign in with Facebook
+                  <FaFacebook className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <span className="text-sm sm:text-base">Sign in with Facebook</span>
                 </button>
               </div>
 
               <button
                 onClick={() => setShowLoginDialog(false)}
-                className="absolute top-4 right-4 text-white hover:text-gray-300"
+                className="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all duration-300"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
+      {showProfileSetup && googleUserInfo && (
+        <ProfileSetupModal
+          onSubmit={handleProfileSetupSubmit}
+          userInfo={googleUserInfo}
+        />
+      )}
       </div>
     );
   }
