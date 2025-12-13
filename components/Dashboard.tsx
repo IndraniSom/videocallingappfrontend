@@ -1,4 +1,4 @@
-  "use client";
+"use client";
   import React, { useEffect, useRef, useState } from "react";
   import {
     Video,
@@ -77,7 +77,7 @@
             localVideoRef.current.srcObject = stream;
           }
         } catch (error) {
-          console.error("❌ Camera access denied or error:", error);
+          console.error("⚠ Camera access denied or error:", error);
         }
       };
 
@@ -198,29 +198,31 @@
 
     return (
       <div className="w-full h-full md:h-screen bg-[#5940df] flex items-center justify-center ">
-      <div className="w-full max-w-fit bg-[#654bf1] -mt-20 px-6 pt-6 rounded-lg flex flex-col md:flex-row gap-5 shadow-lg">
+      <div className="w-full max-w-5xl bg-[#654bf1] -mt-20 px-2 pt-2 rounded-lg flex flex-col md:flex-row gap-5 shadow-lg">
         {/* Left column: local video + controls + pre-chat UI */}
         <div className="md:w-1/2 w-full flex flex-col items-center gap-6 rounded-2xl mt-16 md:mt-0">
           
 
-          {/* Local video preview */}
-          <div className="w-full max-w-[320px] flex-1 h-full flex items-center justify-center rounded-2xl">
-            <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-[400px] object-cover bg-gray-800 rounded-2xl" />
+          {/* Local video preview with controls in top right corner */}
+          <div className="w-full max-w-[600px] flex-1 h-full flex items-center justify-center rounded-2xl relative">
+            <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-[500px] object-cover bg-gray-800 rounded-2xl" />
+            
+            {/* Controls positioned in top right corner (only visible when in a call) */}
+            {inVideoChat && (
+              <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/50 backdrop-blur-sm p-2 rounded-full">
+                {/* <button onClick={() => { setCamOn((p) => !p); agoraToggleCamera(); }} className={`p-2 rounded-full transition-all ${isCamOn ? "bg-green-600" : "bg-red-600"}`} title={isCamOn ? "Turn off camera" : "Turn on camera"}>
+                  {isCamOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                </button>
+                <button onClick={() => { setMicOn((p) => !p); agoraToggleMic(); }} className={`p-2 rounded-full transition-all ${isMicOn ? "bg-green-600" : "bg-red-600"}`} title={isMicOn ? "Mute microphone" : "Unmute microphone"}>
+                  {isMicOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                </button> */}
+                <button onClick={handleSendFriendRequest} className="p-2 bg-purple-600 hover:bg-purple-700 rounded-full" title="Send Friend Request"><UserPlus className="w-4 h-4" /></button>
+                <button onClick={handleSkip} className="p-2 bg-yellow-500 hover:bg-yellow-600 rounded-full" title="Skip user"><SkipForward className="w-4 h-4" /></button>
+                <button onClick={handleEnd} className="p-2 bg-red-600 hover:bg-red-700 rounded-full" title="End Chat"><XCircle className="w-4 h-4" /></button>
+              </div>
+            )}
           </div>
-          {/* Controls (only visible when in a call) */}
-          {inVideoChat && (
-            <div className="w-full flex items-center justify-center gap-4">
-              <button onClick={() => { setCamOn((p) => !p); agoraToggleCamera(); }} className={`p-3 rounded-full transition-all ${isCamOn ? "bg-green-600" : "bg-red-600"}`}>
-                {isCamOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
-              </button>
-              <button onClick={() => { setMicOn((p) => !p); agoraToggleMic(); }} className={`p-3 rounded-full transition-all ${isMicOn ? "bg-green-600" : "bg-red-600"}`}>
-                {isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-              </button>
-              <button onClick={handleSendFriendRequest} className="p-3 bg-purple-600 hover:bg-purple-700 rounded-full" title="Send Friend Request"><UserPlus className="w-5 h-5" /></button>
-              <button onClick={handleSkip} className="p-3 bg-yellow-500 hover:bg-yellow-600 rounded-full" title="Skip user"><SkipForward className="w-5 h-5" /></button>
-              <button onClick={handleEnd} className="p-3 bg-red-600 hover:bg-red-700 rounded-full" title="End Chat"><XCircle className="w-5 h-5" /></button>
-            </div>
-          )}
+
           {/* Preferences & Enter button */}
           <div className="w-full">
             
@@ -246,7 +248,7 @@
 
         {/* Right column: remote video + chat */}
          {!inVideoChat && (
-          <div className="md:w-1/2 w-full max-w-[320px] bg-gradient-to-b from-[#6b4fd4] to-[#5940df] h-[400px] flex flex-col justify-between items-center rounded-3xl p-8">
+          <div className="md:w-1/2 w-full max-w-[600px] bg-gradient-to-b from-[#6b4fd4] to-[#5940df] h-[500px] flex flex-col justify-between items-center rounded-3xl p-8">
             {/* Connect With Section */}
             <div className="w-full">
               <p className="text-white text-lg font-semibold mb-6">Connect With</p>
@@ -328,9 +330,9 @@
          {inVideoChat && (
         <div className=" w-full h-full flex md:flex-row flex-col">
         
-          <div className="w-full max-w-[320px] h-[400px] relative bg-[#5940df] flex items-center justify-center">
+          <div className="w-full max-w-[600px] h-[500px] relative bg-[#5940df] flex items-center justify-center">
             {/* Remote video area */}
-            <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-[400px] rounded-lg object-cover" />
+            <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-[500px] rounded-lg object-cover" />
 
             {!remoteTracks.video && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/60">
@@ -341,8 +343,8 @@
           </div>
 
           {/* Chat area below remote video */}
-          <div className="w-full h-[400px] ml-0 md:ml-5 rounded-2xl overflow-y-auto bg-gray-900/90 backdrop-blur-md border-t border-white/10 flex flex-col justify-between p-4">
-            <div className="flex-1 overflow-y-auto space-y-2">
+          <div className="w-full h-[500px] ml-0 md:ml-5 rounded-2xl overflow-y-auto overflow-x-hidden bg-gray-900/90 backdrop-blur-md border-t border-white/10 flex flex-col justify-between p-4">
+            <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 overflow-x-hidden">
               {!roomId ? (
                 <p className="text-gray-400 text-center mt-4">Waiting for connection...</p>
               ) : Array.isArray(messages) && messages.length > 0 ? (
@@ -353,10 +355,18 @@
                   const isYou = String(sender).trim().toLowerCase() === String(currentUserId).trim().toLowerCase();
 
                   return (
-                    <div key={msg.id || i} className={`text-sm p-2 rounded-lg ${isYou ? "text-blue-400 text-right bg-blue-900/20 ml-auto" : "text-white text-left bg-gray-800/50 mr-auto"} max-w-[80%]`}>
-                      <p className="font-semibold text-xs mb-1">{isYou ? "You" : "Partner"}</p>
-                      <p>{text}</p>
-                    </div>
+                    <div
+  key={msg.id || i}
+  className={`text-sm p-2 rounded-lg ${
+    isYou
+      ? "text-blue-400 text-right bg-blue-900/20 ml-auto"
+      : "text-white text-left bg-gray-800/50 mr-auto"
+  } max-w-[80%] break-words whitespace-normal`}
+>
+  <p className="font-semibold text-xs mb-1">{isYou ? "You" : "Partner"}</p>
+  <p className="break-words whitespace-normal">{text}</p>
+</div>
+
                   );
                 })
               ) : (

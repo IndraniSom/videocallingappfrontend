@@ -11,37 +11,94 @@ import {
   UserPlus,
 } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { Home, Clock, Cloud} from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
+import { FaFacebook } from "react-icons/fa";
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
+import { GenderSelectionModal } from "./GenderSelectionModal";
 
 const navItems = [
   { id: "/dashboard", label: "Home", Icon: Home },
   { id: "/messages", label: "Recent", Icon: MessageCircle },
   { id: "/friend-requests", label: "Likes", Icon: User },
-  { id: "cloud", label: "Cloud", Icon: Cloud },
+  // { id: "cloud", label: "Cloud", Icon: Cloud },
 ];
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [profileImageError, setProfileImageError] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [showGenderModal, setShowGenderModal] = useState(false);
+  const [selectedGender, setSelectedGender] = useState<'male' | 'female' | null>(null);
   const { user, loading, logout } = useUserProfile();
-  const [active, setActive] = useState("/dashboard");
+  const { signInWithGoogle } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const active = pathname;
   // Reset profile image error when user changes
   useEffect(() => {
     setProfileImageError(false);
   }, [user?.profilePicture]);
+
+  const handleGenderSelect = (gender: 'male' | 'female') => {
+    setSelectedGender(gender);
+    setShowGenderModal(false);
+    // Retry Google sign-in with selected gender
+    if (gender) {
+      handleGoogleSignInWithGender(gender);
+    }
+  };
+
+  const handleGoogleSignInWithGender = async (gender: 'male' | 'female') => {
+    try {
+      await signInWithGoogle(gender);
+      router.push('/dashboard');
+      setShowLoginDialog(false);
+    } catch (error: any) {
+      console.error('Google sign-in failed:', error);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      // Try to sign in without gender first
+      const result = await signInWithGoogle();
+      router.push('/dashboard');
+      setShowLoginDialog(false);
+    } catch (error: any) {
+      // If backend says user needs gender, show modal
+      if (error.response?.data?.requiresGender ||
+          error.response?.data?.message?.includes('Gender') ||
+          error.response?.data?.message?.includes('gender') ||
+          (error.response?.status === 400 && error.response?.data?.message?.includes('required'))) {
+        setShowGenderModal(true);
+      } else {
+        console.error('Google sign-in failed:', error);
+      }
+    }
+  };
+
+  const handleFacebookSignIn = () => {
+    // TODO: Implement Facebook sign-in
+    console.log('Facebook sign-in not implemented yet');
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-[#5940df] text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo */}
-          <div className="flex items-center">
-            <span className="text-red-500 font-bold text-xl sm:text-3xl">
-              CooMeet
-            </span>
-          </div>
+         <Link href='/' className="flex items-center">
+            <img
+              src="/logo.svg"
+              alt="CooMeet Logo"
+              className="h-8 sm:h-20 w-auto"
+            />
+          </Link>
 
           {/* Desktop Navigation */}
          <div className="flex-1 flex items-center justify-center">
@@ -61,7 +118,6 @@ const Navbar = () => {
                   href={`${item.id}`}>
                 <button
                   key={item.id}
-                  onClick={() => setActive(item.id)}
                   aria-label={item.label}
                   className="relative z-10 flex items-center justify-center w-11 h-11 rounded-full focus:outline-none"
                 >
@@ -110,12 +166,12 @@ const Navbar = () => {
           {/* Right Side (Desktop) */}
           <div className="hidden md:flex items-center gap-4 relative">
             {!loading && !user ? (
-              <Link
-                href="/login"
-                className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition"
+              <button
+                onClick={() => setShowLoginDialog(true)}
+                className="bg-[#fffc01] text-black px-4 py-2 rounded-md  transition"
               >
                 Login / Register
-              </Link>
+              </button>
             ) : (
               <>
                 {/* Profile Icon */}
@@ -294,6 +350,59 @@ const Navbar = () => {
                 <span className="text-xs mt-1">Profile</span>
               </Link>
             )}
+          </div>
+        )}
+
+        {/* Login Dialog */}
+        {showLoginDialog && (
+          <div className="fixed inset-0 bg-white/50 bg-opacity-50 backdrop-blur-md flex items-center justify-center z-50">
+            <div className="relative bg-[#5940df] border-muted rounded-md border px-6 py-12 shadow-md max-w-sm w-full mx-4">
+              <div className="flex flex-col items-center gap-y-2 mb-8">
+                {/* <div className="flex items-center gap-1">
+                  <span className="text-red-500 font-bold text-2xl">CooMeet</span>
+                </div> */}
+                <h1 className="text-2xl font-semibold text-white">Welcome</h1>
+              </div>
+
+              {showGenderModal && <GenderSelectionModal onSelect={handleGenderSelect} />}
+
+              <div className="flex flex-col gap-4">
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  className="w-full text-red-500 border-[1px] border-black rounded-md py-2 flex items-center justify-center gap-2 bg-gray-50 transition"
+                >
+                  <FcGoogle className="size-5" />
+                  Sign in with Google
+                </button>
+                <button
+                  type="button"
+                  onClick={handleFacebookSignIn}
+                  className="w-full text-blue-600 border-[1px] border-black rounded-md py-2 flex items-center justify-center gap-2 bg-gray-50 transition"
+                >
+                  <FaFacebook className="size-5" />
+                  Sign in with Facebook
+                </button>
+              </div>
+
+              {/* <div className="flex justify-center gap-1 text-sm text-white mt-6">
+                <p>Don't have an account?</p>
+                <Link
+                  href="/signup"
+                  className="text-red-500 hover:underline"
+                  onClick={() => setShowLoginDialog(false)}
+                >
+                  Signup
+                </Link>
+              </div> */}
+
+              <button
+                onClick={() => setShowLoginDialog(false)}
+                className="absolute top-4 right-4 text-white hover:text-gray-300"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         )}
       </div>

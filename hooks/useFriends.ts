@@ -94,14 +94,13 @@ export function useFriends() {
   );
 
   const acceptFriendRequest = useCallback(
-    async (id: string) => {
+    async (userId: string) => {
       if (!token) return;
       try {
-        await axios.post(
-          `${API_URL}/friends/accept/${id}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axios.post(`http://localhost:5000/api/friends/accept/${userId}`, {}, {
+  headers: { Authorization: `Bearer ${token}` }
+});
+
         await fetchFriends();
       } catch (err) {
         console.error("❌ Accept request failed:", err);
