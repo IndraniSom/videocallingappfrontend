@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { usePathname } from "next/navigation";
 import "./globals.css";
 import Navbar from "../components/Navbar";
+import { Toaster } from "react-hot-toast";
+import "@/lib/i18n";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -24,8 +26,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-tr from-red-500 to-slate-50`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased w-full min-h-screen`}
       >
+        <Toaster position="top-right" />
         {!hideNavbar && <Navbar />}
         {children}
       </body>

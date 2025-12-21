@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState, useCallback } from "react";
-import AgoraRTC, {
+import type {
   IAgoraRTCClient,
   ICameraVideoTrack,
   IMicrophoneAudioTrack,
@@ -9,6 +9,19 @@ import AgoraRTC, {
   IAgoraRTCRemoteUser,
 } from "agora-rtc-sdk-ng";
 import axios from "axios";
+
+let AgoraRTC: typeof import("agora-rtc-sdk-ng").default | null = null;
+
+async function getAgoraRTC() {
+  if (typeof window === "undefined") {
+    throw new Error("AgoraRTC can only be loaded in the browser");
+  }
+  if (!AgoraRTC) {
+    const mod = await import("agora-rtc-sdk-ng");
+    AgoraRTC = mod.default;
+  }
+  return AgoraRTC;
+}
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID!;
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
@@ -30,28 +43,13 @@ export function useAgoraChat() {
     async (channel: string, token: string, account: string) => {
       if (!APP_ID) throw new Error("Missing NEXT_PUBLIC_AGORA_APP_ID");
 
-      const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+      const rtc = await getAgoraRTC();
+
+      const client = rtc.createClient({ mode: "rtc", codec: "vp8" });
       clientRef.current = client;
       setChannelName(channel);
 
-      console.log("Joining Agora channel with:", {
-        appId: APP_ID,
-        channel,
-        account,
-      });
-
-      await client.join(APP_ID, channel, token, account);
-
-      const mic = await AgoraRTC.createMicrophoneAudioTrack();
-      const cam = await AgoraRTC.createCameraVideoTrack();
-
-      setLocalAudioTrack(mic);
-      setLocalVideoTrack(cam);
-
-      await client.publish([mic, cam]);
-      console.log("✅ Published local tracks");
-
-      // 🔹 Handle remote users
+      // 🔹 Register event listeners BEFORE joining to avoid missing events
       client.on("user-published", async (user: IAgoraRTCRemoteUser, mediaType) => {
         await client.subscribe(user, mediaType);
         if (mediaType === "video") {
@@ -65,15 +63,64 @@ export function useAgoraChat() {
         }
       });
 
-      client.on("user-unpublished", () => {
-        console.log("❌ Remote user unpublished");
-        setRemoteTracks({});
+      client.on("user-unpublished", (_user: IAgoraRTCRemoteUser, mediaType) => {
+        console.log("❌ Remote user unpublished:", mediaType);
+        if (mediaType === "video") {
+          setRemoteTracks((prev) => {
+            const next = { ...prev };
+            delete next.video;
+            return next;
+          });
+        }
+        if (mediaType === "audio") {
+          setRemoteTracks((prev) => {
+            const next = { ...prev };
+            delete next.audio;
+            return next;
+          });
+        }
       });
 
       client.on("user-left", () => {
         console.log("👋 Remote user left");
         setRemoteTracks({});
       });
+
+      console.log("Joining Agora channel with:", {
+        appId: APP_ID,
+        channel,
+        account,
+      });
+
+      await client.join(APP_ID, channel, token, account);
+
+      // 🔹 Subscribe to any already-published users (important for the first-joiner case)
+      for (const user of client.remoteUsers) {
+        try {
+          if (user.hasVideo) {
+            await client.subscribe(user, "video");
+            setRemoteTracks((prev) => ({ ...prev, video: user.videoTrack! }));
+            console.log("📹 Subscribed to already-published remote video");
+          }
+          if (user.hasAudio) {
+            await client.subscribe(user, "audio");
+            setRemoteTracks((prev) => ({ ...prev, audio: user.audioTrack! }));
+            user.audioTrack?.play();
+            console.log("🔊 Subscribed to already-published remote audio");
+          }
+        } catch (e) {
+          console.warn("Failed to subscribe to existing remote user", e);
+        }
+      }
+
+      const mic = await rtc.createMicrophoneAudioTrack();
+      const cam = await rtc.createCameraVideoTrack();
+
+      setLocalAudioTrack(mic);
+      setLocalVideoTrack(cam);
+
+      await client.publish([mic, cam]);
+      console.log("✅ Published local tracks");
 
       return { mic, cam };
     },

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import axiosInstance from "@/lib/axiosInstance";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -25,10 +26,10 @@ export default function VideoUpload({ onUpload, videoBlob }: Props) {
         },
       });
       onUpload(response.data.videoUrl);
-      alert("Video uploaded successfully!");
+      toast.success("Video uploaded successfully!");
     } catch (error: any) {
       console.error('Upload failed:', error);
-      alert("Upload failed: " + (error.response?.data?.message || error.message));
+      toast.error("Upload failed: " + (error.response?.data?.message || error.message));
     } finally {
       setUploading(false);
     }

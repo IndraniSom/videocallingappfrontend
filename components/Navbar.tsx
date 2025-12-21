@@ -21,30 +21,49 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebook, FaMale, FaFemale } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase";
+import axiosInstance from "@/lib/axiosInstance";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 const navItems = [
-  { id: "/dashboard", label: "Home", Icon: Home },
-  { id: "/messages", label: "Recent", Icon: MessageCircle },
-  { id: "/friend-requests", label: "Likes", Icon: User },
+  { id: "/dashboard", labelKey: "videochat", Icon: Video },
+  { id: "/messages", labelKey: "messages", Icon: MessageCircle },
+  { id: "/friend-requests", labelKey: "friend_requests", Icon: UserPlus },
+  { id: "/call-history", labelKey: "call_history", Icon: Clock },
 ];
 
 interface ProfileSetupModalProps {
-  onSubmit: (gender: 'male' | 'female') => void;
+  onSubmit: (payload: {
+    gender: 'male' | 'female';
+    name: string;
+    birthday: string;
+    profilePicture?: string;
+  }) => void;
   userInfo: {
     name: string;
     email: string;
     profilePicture?: string;
+    birthday?: string;
+    gender?: 'male' | 'female';
   };
 }
 
 const ProfileSetupModal = ({ onSubmit, userInfo }: ProfileSetupModalProps) => {
-  const [selectedGender, setSelectedGender] = useState<'male' | 'female' | null>(null);
+  const [selectedGender, setSelectedGender] = useState<'male' | 'female' | null>(userInfo.gender ?? null);
   const [name, setName] = useState(userInfo.name || '');
-  const [birthday, setBirthday] = useState('');
+  const [birthday, setBirthday] = useState(userInfo.birthday || '');
+  const [profilePicture, setProfilePicture] = useState(userInfo.profilePicture || '');
+  
 
   const handleSave = () => {
     if (selectedGender && name && birthday) {
-      onSubmit(selectedGender);
+      onSubmit({
+        gender: selectedGender,
+        name,
+        birthday,
+        profilePicture: profilePicture || undefined,
+      });
     }
   };
 
@@ -59,9 +78,9 @@ const ProfileSetupModal = ({ onSubmit, userInfo }: ProfileSetupModalProps) => {
           <div className="flex justify-center mb-6">
             <div className="relative">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white text-4xl font-bold overflow-hidden">
-                {userInfo.profilePicture ? (
+                {profilePicture ? (
                   <img
-                    src={userInfo.profilePicture}
+                    src={profilePicture}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -72,6 +91,20 @@ const ProfileSetupModal = ({ onSubmit, userInfo }: ProfileSetupModalProps) => {
               <button className="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors">
                 <Camera className="w-4 h-4 text-white" />
               </button>
+            </div>
+          </div>
+
+          {/* Profile Photo URL */}
+          <div className="mb-4">
+            <div className="flex items-center gap-3 bg-gray-100 rounded-2xl px-4 py-3">
+              <span className="text-2xl">🖼️</span>
+              <input
+                type="url"
+                value={profilePicture}
+                onChange={(e) => setProfilePicture(e.target.value)}
+                placeholder="Profile photo URL"
+                className="flex-1 bg-transparent outline-none text-gray-800 font-medium"
+              />
             </div>
           </div>
 
@@ -88,6 +121,19 @@ const ProfileSetupModal = ({ onSubmit, userInfo }: ProfileSetupModalProps) => {
                 className="flex-1 bg-transparent outline-none text-gray-800 font-medium"
               />
               <span className="text-xs text-gray-400">{name.length}/16</span>
+            </div>
+          </div>
+
+          {/* Email */}
+          <div className="mb-4">
+            <div className="flex items-center gap-3 bg-gray-100 rounded-2xl px-4 py-3">
+              <Mail className="w-5 h-5 text-blue-500" />
+              <input
+                type="text"
+                value={userInfo.email || ''}
+                readOnly
+                className="flex-1 bg-transparent outline-none text-gray-600 font-medium"
+              />
             </div>
           </div>
 
@@ -161,25 +207,64 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [profileView, setProfileView] = useState<"main" | "more">("main");
+
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
+  const [pendingNav, setPendingNav] = useState<string | null>(null);
   const [profileImageError, setProfileImageError] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [googleUserInfo, setGoogleUserInfo] = useState<any>(null);
+  const [facebookUserInfo, setFacebookUserInfo] = useState<any>(null);
   const { user, loading, logout } = useUserProfile();
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, signInWithFacebook } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  
+ const maybeEndCallAndNavigate = async (href: string, closeMobileMenu?: boolean) => {
+  if (!href) return;
+
+  let activeCall: any = null;
+  try {
+    activeCall = JSON.parse(localStorage.getItem("activeCall") || "null");
+  } catch {
+    activeCall = null;
+  }
+
+  // 🔥 If call is active but user has NOT confirmed
+  if (activeCall?.roomId && activeCall?.callId && pendingNav !== href) {
+    toast.error("⚠ Leaving will disconnect the call. Click again to continue.");
+    setPendingNav(href);
+    return;
+  }
+
+  // 🔥 user confirmed → end call
+  if (activeCall?.roomId && activeCall?.callId) {
+    try {
+      await axiosInstance.post(`${process.env.NEXT_PUBLIC_API_URL}/call/end`, {
+  roomId: activeCall.roomId,
+  callId: activeCall.callId,
+  forceEnd: true, // <-- backend will disconnect partner
+});
+
+    } catch (e) {
+      console.error("Failed to end call before navigation", e);
+    }
+
+    try {
+      localStorage.removeItem("activeCall");
+    } catch {}
+  }
+
+  if (closeMobileMenu) setIsMobileMenuOpen(false);
+  router.push(href);
+  setPendingNav(null);
+};
+
+
   const active = pathname;
 
-  // Force re-render when user data changes in localStorage
-  useEffect(() => {
-    const handleStorageChange = () => {
-      window.location.reload();
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     setProfileImageError(false);
@@ -191,76 +276,91 @@ const Navbar = () => {
       if (dropdownOpen && !target.closest('.dropdown-container')) {
         setDropdownOpen(false);
       }
+      if (languageMenuOpen && !target.closest('.language-dropdown-container')) {
+        setLanguageMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [dropdownOpen]);
+  }, [dropdownOpen, languageMenuOpen]);
 
-  const handleProfileSetupSubmit = async (gender: 'male' | 'female') => {
+  const handleProfileSetupSubmit = async (payload: {
+    gender: 'male' | 'female';
+    name: string;
+    birthday: string;
+    profilePicture?: string;
+  }) => {
     try {
-      // Complete the sign-up with the selected gender
-      await signInWithGoogle(gender);
+      const [firstName, ...lastParts] = String(payload.name || "").trim().split(" ");
+      const lastName = lastParts.join(" ");
+
+      if (googleUserInfo) {
+        await signInWithGoogle({
+          role: payload.gender,
+          dateOfBirth: payload.birthday,
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          profilePicture: payload.profilePicture,
+        });
+      } else if (facebookUserInfo) {
+        await signInWithFacebook({
+          role: payload.gender,
+          dateOfBirth: payload.birthday,
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          profilePicture: payload.profilePicture,
+        });
+      }
+
       setShowProfileSetup(false);
       setShowLoginDialog(false);
-      
-      // Force reload to update navbar with user data
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     } catch (error: any) {
       console.error('Profile setup failed:', error);
+      toast.error('Profile setup failed');
     }
   };
 
   const handleGoogleSignIn = async () => {
     try {
       const result = await signInWithGoogle();
-      
+
       // If successful (existing user login), force reload to update navbar
       setShowLoginDialog(false);
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     } catch (error: any) {
-      // Check if this is a NEW USER that needs to complete profile setup
-      const isNewUserSignup = error.response?.data?.requiresGender || 
-                              error.response?.data?.isNewUser ||
-                              (error.response?.data?.message?.includes('Gender') && !error.response?.data?.user) ||
-                              (error.response?.data?.message?.includes('gender') && !error.response?.data?.user) ||
-                              (error.response?.status === 400 && error.response?.data?.message?.includes('required'));
-      
-      // Check if this is an EXISTING USER trying to log in (has user data but missing something)
-      const isExistingUser = error.response?.data?.user || 
-                            error.response?.data?.token ||
-                            error.response?.data?.message?.includes('already exists') ||
-                            error.response?.data?.message?.includes('login');
-      
-      if (isNewUserSignup && !isExistingUser) {
-        // This is a NEW USER - show profile setup modal
-        const userInfo = {
-          name: error.response?.data?.name || error.response?.data?.firstName || '',
-          email: error.response?.data?.email || '',
-          profilePicture: error.response?.data?.profilePicture || error.response?.data?.picture || '',
-        };
-        
-        setGoogleUserInfo(userInfo);
+      if (error?.requiresGender && error?.userInfo) {
+        setGoogleUserInfo(error.userInfo);
         setShowProfileSetup(true);
-      } else if (isExistingUser) {
-        // This is an EXISTING USER - just redirect to dashboard
-        setShowLoginDialog(false);
-        window.location.href = '/dashboard';
-      } else {
-        // Some other error occurred
-        console.error('Google sign-in failed:', error);
-        alert(error.response?.data?.message || 'Sign in failed. Please try again.');
+        return;
       }
+
+      console.error('Google sign-in failed:', error);
+      toast.error(error?.response?.data?.message || 'Sign in failed. Please try again.');
     }
   };
 
-  const handleFacebookSignIn = () => {
-    console.log('Facebook sign-in not implemented yet');
+  const handleFacebookSignIn = async () => {
+    try {
+      await signInWithFacebook();
+      setShowLoginDialog(false);
+      router.push('/dashboard');
+    } catch (error: any) {
+      if (error?.requiresGender && error?.userInfo) {
+        setFacebookUserInfo(error.userInfo);
+        setShowProfileSetup(true);
+        return;
+      }
+      console.error('Facebook sign-in failed:', error);
+      toast.error(error?.response?.data?.message || 'Sign in failed. Please try again.');
+    }
   };
 
   return (
     <nav className="sticky top-0 z-50 bg-[#5940df] text-white">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16 lg:h-20">
+
           {/* Logo */}
           <Link href='/' className="flex items-center flex-shrink-0">
             <img
@@ -282,11 +382,26 @@ const Navbar = () => {
                 {navItems.map((item) => {
                   const isActive = item.id === active;
                   return (
-                    <Link key={item.id} href={`${item.id}`}>
+                    <Link
+                      key={item.id}
+                      href={`${item.id}`}
+                      onClick={(e) => {
+  if (typeof window !== "undefined") {
+    const raw = localStorage.getItem("activeCall");
+    if (raw) {
+      e.preventDefault();
+      void maybeEndCallAndNavigate(`${item.id}`);
+      return;
+    }
+  }
+}}
+
+                    >
                       <button
-                        aria-label={item.label}
+                        aria-label={t(item.labelKey)}
                         className="relative z-10 flex gap-2 items-center justify-center px-4 py-2 rounded-full focus:outline-none transition-all duration-300 hover:scale-105 group min-w-[80px]"
                       >
+
                         <span
                           aria-hidden
                           className={`absolute inset-0 rounded-full transition-all duration-300 ${
@@ -308,7 +423,7 @@ const Navbar = () => {
                         <span className={`relative text-xs font-medium transition-all duration-300 ${
                           isActive ? "text-black" : "text-white/80 group-hover:text-white"
                         }`}>
-                          {item.label}
+                          {t(item.labelKey)}
                         </span>
                       </button>
                     </Link>
@@ -326,6 +441,143 @@ const Navbar = () => {
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-3 lg:gap-4">
+            <div className="relative language-dropdown-container hidden sm:block">
+              <button
+                type="button"
+                onClick={() => setLanguageMenuOpen((v) => !v)}
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-3 py-2 rounded-full text-sm font-semibold transition-all duration-300 border border-white/20"
+                aria-label={t("language")}
+              >
+                <span className="text-base">🌐</span>
+                <span className="hidden lg:inline">{t("language")}</span>
+              </button>
+
+              {languageMenuOpen && (
+                <div className="absolute right-0 top-12 bg-white text-gray-900 rounded-xl shadow-2xl border border-gray-200 w-56 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      i18n.changeLanguage("en");
+                      setLanguageMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    🇺🇸 United States (English)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      i18n.changeLanguage("hi");
+                      setLanguageMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    🇮🇳 India (हिन्दी)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      i18n.changeLanguage("de");
+                      setLanguageMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    🇩🇪 Germany (Deutsch)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      i18n.changeLanguage("pt");
+                      setLanguageMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    🇵🇹 Portugal (Português)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      i18n.changeLanguage("ru");
+                      setLanguageMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    🇷🇺 Russia (Русский)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      i18n.changeLanguage("es");
+                      setLanguageMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    🇪🇸 Spain (Español)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      i18n.changeLanguage("fr");
+                      setLanguageMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    🇫🇷 France (Français)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      i18n.changeLanguage("it");
+                      setLanguageMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    🇮🇹 Italy (Italiano)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      i18n.changeLanguage("ar");
+                      setLanguageMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    🇸🇦 Arabic (العربية)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      i18n.changeLanguage("zh");
+                      setLanguageMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    🇨🇳 Chinese (中文)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      i18n.changeLanguage("ja");
+                      setLanguageMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    🇯🇵 Japanese (日本語)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      i18n.changeLanguage("ko");
+                      setLanguageMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    🇰🇷 Korean (한국어)
+                  </button>
+                </div>
+              )}
+            </div>
+
             {!loading && !user ? (
               <>
                 <button
@@ -335,25 +587,28 @@ const Navbar = () => {
                     textShadow: "0 1px 2px rgba(0, 0, 0, 0.1)"
                   }}
                 >
-                  <span className="hidden lg:inline">Login / Register</span>
-                  <span className="lg:hidden">Login</span>
+                  <span className="hidden lg:inline">{t("login_register")}</span>
+                  <span className="lg:hidden">{t("login")}</span>
                 </button>
                 <button
                   onClick={() => setShowLoginDialog(true)}
                   className="sm:hidden flex items-center gap-1 bg-gradient-to-r from-[#FFFB00] to-[#FFE600] text-black px-4 py-2 rounded-md text-sm font-bold shadow-lg"
                 >
-                  Login
+                  {t("login")}
                 </button>
               </>
             ) : (
+              
               <div className="hidden md:flex items-center gap-3 relative dropdown-container">
-                <button
+                {user && (
+                  
+                  <button
                   className="w-10 h-10 lg:w-11 lg:h-11 flex items-center justify-center rounded-full bg-gradient-to-br from-white to-gray-100 hover:from-yellow-100 hover:to-yellow-50 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden ring-2 ring-white/40 hover:ring-yellow-300 hover:scale-110"
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                 >
-                  {user?.profilePicture && !profileImageError ? (
-                    <img
-                      src={user.profilePicture}
+                  {user.profilePicture ? (
+                            <img
+                              src={user.profilePicture}
                       alt={`${user.firstName || user.firstname || ''} ${user.lastName || user.lastname || ''}`}
                       className="w-full h-full object-cover"
                       onError={() => setProfileImageError(true)}
@@ -363,20 +618,21 @@ const Navbar = () => {
                   )}
                   <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-[#5940df] rounded-full"></span>
                 </button>
-
-                <button
+)}
+                {/* <button
                   onClick={logout}
                   className="hidden lg:flex items-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur-md text-white px-4 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 border border-white/30 hover:border-white/50 shadow-lg hover:shadow-xl hover:scale-105"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
-                </button>
+                  <span>{t("logout")}</span>
+                </button> */}
+              
 
                 {dropdownOpen && user && (
                   <div className="no-scrollbar absolute right-0 top-12 lg:top-14 bg-gradient-to-br from-[#3a2a5a] to-[#2a1a4a] border border-white/10 shadow-2xl rounded-2xl p-4 lg:p-6 w-72 lg:w-80 max-h-[80vh] overflow-y-auto animate-in slide-in-from-top-2 duration-300">
                     <div className="flex items-start justify-between mb-4 lg:mb-6 pb-4 lg:pb-6 border-b border-white/10">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white text-xl lg:text-2xl font-bold overflow-hidden ring-2 ring-white/20">
+                        <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold overflow-hidden ring-2 ring-white/20">
                           {user.profilePicture && !profileImageError ? (
                             <img
                               src={user.profilePicture}
@@ -413,7 +669,8 @@ const Navbar = () => {
                         Join
                       </button>
                     </div> */}
-
+                      {profileView === "main" && (
+<>
                     <div className="space-y-2 lg:space-y-3 mb-4 lg:mb-6 bg-[#2a1a4a] rounded-xl p-3 lg:p-4">
                       <div className="flex items-center justify-between text-gray-300 text-sm">
                         <span className="flex items-center gap-2">📅 Birthday</span>
@@ -428,37 +685,53 @@ const Navbar = () => {
                         <span className="text-xs truncate max-w-[150px]">{user.email || 'Not set'}</span>
                       </div>
                     </div>
+                    <button
+  onClick={() => setProfileView("more")}
+  className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition-all flex items-center justify-between text-sm"
+>
+  📋 More
+  <span>›</span>
+</button>
+<button
+  onClick={logout}
+  className="w-full mt-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-all text-sm"
+>
+  <LogOut className="w-4 h-4" />
+  <span>Logout</span>
+</button>
 
-                    <div className="space-y-2 border-t border-white/10 pt-3 lg:pt-4">
-                      <button
-                        onClick={() => setMoreMenuOpen(!moreMenuOpen)}
-                        className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition-all flex items-center justify-between text-sm"
-                      >
-                        📋 More
-                        <span className={`transition-transform duration-300 ${moreMenuOpen ? 'rotate-90' : ''}`}>›</span>
-                      </button>
-
-                      {moreMenuOpen && (
-                        <div className="space-y-1 ml-2 border-l-2 border-white/10 pl-3 mt-2 animate-in slide-in-from-left-1 duration-200">
-                          <Link href="/about-us" className="block text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition-all text-sm">
-                            ℹ️ About Us
-                          </Link>
-                          <Link href="/contact-us" className="block text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition-all text-sm">
-                            📧 Contact Us
-                          </Link>
-                          <Link href="/faq" className="block text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition-all text-sm">
-                            ❓ FAQ
-                          </Link>
-                          <Link href="/terms-conditions" className="block text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition-all text-sm">
-                            📋 Terms & Conditions
-                          </Link>
-                          <Link href="/privacy-policy" className="block text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition-all text-sm">
-                            🔒 Privacy Policy
-                          </Link>
-                        </div>
+</>
                       )}
-                    </div>
+                       
+                    {profileView === "more" && (
+  <>
+    {/* More Header */}
+    <div className="flex items-center gap-3 mb-6">
+      <button
+        onClick={() => setProfileView("main")}
+        className="text-white text-lg"
+      >
+        ←
+      </button>
+      <h2 className="text-white font-semibold text-base">More</h2>
+    </div>
+
+    {/* More options (FULL WIDTH) */}
+    <div className="flex flex-col space-y-4 text-white text-sm">
+      <button className="text-left py-2">Blocklist</button>
+      <Link href="/about-us">About Us</Link>
+      <Link href="/safety">Safety</Link>
+      <Link href="/community">Community</Link>
+      <Link href="/privacy-policy">Privacy Policy</Link>
+      <Link href="/terms-conditions">Terms Of Service</Link>
+      <Link href="/contact-us">Contact Us</Link>
+      <Link href="/faq">FAQ</Link>
+      <Link href="/account-security">Account & Security</Link>
+    </div>
+  </>
+)}
                   </div>
+
                 )}
               </div>
             )}
@@ -468,9 +741,9 @@ const Navbar = () => {
               className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-all duration-300"
             >
               {isMobileMenuOpen ? (
-                <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                <X className="w-5 h-5" />
               ) : (
-                <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+                <Menu className="w-5 h-5" />
               )}
             </button>
           </div>
@@ -486,7 +759,17 @@ const Navbar = () => {
                     key={item.id}
                     href={item.id}
                     className="flex flex-col items-center gap-1 min-w-[60px]"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    onClick={(e) => {
+  if (typeof window !== "undefined") {
+    const raw = localStorage.getItem("activeCall");
+    if (raw) {
+      e.preventDefault();
+      void maybeEndCallAndNavigate(`${item.id}`);
+      return;
+    }
+  }
+}}
+
                   >
                     <div className={`p-2 rounded-full transition-all duration-300 ${
                       isActive 
@@ -498,7 +781,7 @@ const Navbar = () => {
                       />
                     </div>
                     <span className={`text-xs ${isActive ? 'text-yellow-400 font-semibold' : 'text-white/80'}`}>
-                      {item.label}
+                      {t(item.labelKey)}
                     </span>
                   </Link>
                 );
@@ -590,10 +873,10 @@ const Navbar = () => {
       )}
 
       {/* Profile Setup Modal */}
-      {showProfileSetup && googleUserInfo && (
+      {showProfileSetup && (googleUserInfo || facebookUserInfo) && (
         <ProfileSetupModal
           onSubmit={handleProfileSetupSubmit}
-          userInfo={googleUserInfo}
+          userInfo={googleUserInfo || facebookUserInfo}
         />
       )}
     </nav>

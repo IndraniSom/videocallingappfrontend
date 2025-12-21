@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Send, Loader2, Image as ImageIcon, Video, Mic, Smile, MoreVertical, Ban, Flag } from "lucide-react";
+import { Send, Loader2, Image as ImageIcon, Video, Mic, Smile, MoreVertical, Ban, Flag, UserMinus } from "lucide-react";
 import axios from "axios";
 import axiosInstance from "@/lib/axiosInstance";
+import toast from "react-hot-toast";
+
 import Image from "next/image";
 import EmojiPicker from "emoji-picker-react";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -27,7 +29,7 @@ export default function ChatPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const { user, loading: userLoading } = useUserProfile();
   const userId = user?._id || user?.id || "";
@@ -203,7 +205,7 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const handleBlock = async (friendId: string) => {
     try {
       await axiosInstance.post(`${API_URL}/messages/block/${friendId}`);
-      alert("User blocked successfully");
+      toast.success("User blocked successfully");
       fetchFriends();
       if (activeFriend?.user._id === friendId) {
         setActiveFriend(null);
@@ -211,7 +213,7 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
       setShowFriendMenu(null);
     } catch (err) {
       console.error("Block error:", err);
-      alert("Failed to block user");
+      toast.error("Failed to block user");
     }
   };
   
@@ -222,18 +224,39 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     
     try {
       await axiosInstance.post(`${API_URL}/messages/report/${friendId}`, { reason });
-      alert("User reported successfully");
+      toast.success("User reported successfully");
       setShowFriendMenu(null);
     } catch (err) {
       console.error("Report error:", err);
-      alert("Failed to report user");
+      toast.error("Failed to report user");
+    }
+  };
+
+  const handleUnfriend = async (friendId: string) => {
+    if (!friendId) return;
+
+    const ok = window.confirm("Remove this friend?");
+    if (!ok) return;
+
+    try {
+      await axiosInstance.delete(`${API_URL}/friends/unfriend/${friendId}`);
+      toast.success("Unfriended successfully");
+      await fetchFriends();
+      if (activeFriend?.user?._id === friendId) {
+        setActiveFriend(null);
+        setMessages([]);
+      }
+      setShowFriendMenu(null);
+    } catch (err) {
+      console.error("Unfriend error:", err);
+      toast.error("Failed to unfriend user");
     }
   };
   
   // Update online status
   useEffect(() => {
-    if (!userId) return;
-    
+    if (!userId || !token) return;
+
     axiosInstance.post(`${API_URL}/messages/online`).catch(console.error);
     
     const statusInterval = setInterval(() => {
@@ -257,7 +280,7 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
       clearInterval(statusInterval);
       axiosInstance.post(`${API_URL}/messages/offline`).catch(console.error);
     };
-  }, [userId, API_URL, friends]);
+  }, [userId, token, API_URL, friends]);
   
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -277,7 +300,7 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   return (
     <div className="w-full min-h-screen bg-[#5940df] flex items-center justify-center">
-      <div className="w-full max-w-5xl bg-[#654bf1] px-2 pt-2 pb-2 rounded-lg shadow-lg mx-4 my-4 h-[520px]">
+      <div className="w-full max-w-5xl bg-[#654bf1] px-2 pt-2 pb-2 rounded-lg shadow-lg mx-2 sm:mx-4 my-2 sm:my-4 h-[calc(100vh-110px)] md:h-[520px]">
         <div className=" h-125 flex flex-col md:flex-row gap-5 overflow-hidden">
           
           {/* 🟩 Left Sidebar - Friends List */}
@@ -319,9 +342,9 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
                               src={f.user.profilePicture}
                               alt={`${f.user.firstName} ${f.user.lastName}`}
                               className="w-12 h-12 rounded-full object-cover ring-2 ring-[#6b4fd4]"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
+                              // onError={(e) => {
+                              //   e.currentTarget.style.display = 'none';
+                              // }}
                             />
                           ) : (
                             <Image 
@@ -375,6 +398,13 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
                             Block User
                           </button>
                           <button
+                            onClick={() => handleUnfriend(friendId)}
+                            className="w-full flex items-center gap-2 px-4 py-2 hover:bg-[#4a3a6a] rounded-lg text-left text-sm text-white transition"
+                          >
+                            <UserMinus className="w-4 h-4" />
+                            Unfriend
+                          </button>
+                          <button
                             onClick={() => handleReport(friendId)}
                             className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-500/20 rounded-lg text-left text-sm text-red-400 transition"
                           >
@@ -391,7 +421,7 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
           </div>
 
           {/* 🟦 Right Panel - Chat Window */}
-          <div className=" flex-1 flex flex-col bg-gradient-to-b from-[#3a2a5a] to-[#2a1a4a] rounded-2xl overflow-hidden">
+          <div className="flex-1 flex flex-col bg-gradient-to-b from-[#3a2a5a] to-[#2a1a4a] rounded-2xl overflow-hidden">
             {/* Header */}
             <div className={`p-6 transition-all duration-300 ${activeFriend ? "border-b border-[#5a4a7a]" : "border-b-0"} text-white flex items-center justify-between rounded-t-2xl`}>
               {activeFriend ? (
@@ -409,9 +439,9 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
                           src={activeFriend.user.profilePicture}
                           alt={`${activeFriend.user.firstName} ${activeFriend.user.lastName}`}
                           className="w-12 h-12 rounded-full object-cover ring-2 ring-[#6b4fd4]"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                          }}
+                          // onError={(e) => {
+                          //   e.currentTarget.style.display = 'none';
+                          // }}
                         />
                       ) : (
                         <Image 
@@ -447,7 +477,7 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
             </div>
 
             {/* Chat area */}
-            <div className="flex-1 p-6 overflow-y-auto space-y-4 no-scrollbar">
+            <div className="flex-1 p-3 sm:p-4 md:p-6 overflow-y-auto space-y-4 no-scrollbar">
               {loading ? (
                 <div className="flex justify-center items-center h-full text-gray-400">
                   <Loader2 className="animate-spin w-6 h-6 mr-2" /> Loading messages...
@@ -582,7 +612,7 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
               <div ref={bottomRef}></div>
             </div>
 {previewUrl && (
-  <div className="px-6 py-3 bg-[#3a2a5a] border-t border-[#5a4a7a] flex items-center gap-4">
+  <div className="px-3 sm:px-4 md:px-6 py-3 bg-[#3a2a5a] border-t border-[#5a4a7a] flex items-center gap-4">
     <img
       src={previewUrl}
       alt="preview"
@@ -614,9 +644,9 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
             {/* Input */}
             {activeFriend && (
-              
-              <div className="p-6 flex items-center gap-3 bg-[#4a3a6a] border-t border-[#5a4a7a] rounded-b-2xl">
-                
+
+              <div className="sticky bottom-0 p-1 sm:p-4 md:p-6 flex items-center  sm:gap-3 bg-[#4a3a6a] border-t border-[#5a4a7a] rounded-b-2xl">
+
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -662,17 +692,19 @@ const [previewUrl, setPreviewUrl] = useState<string | null>(null);
                   }}
                 />
                 <button
-  onClick={() => {
-    if (selectedFile) {
-      handleSend(selectedFile);
-      setSelectedFile(null);
-      setPreviewUrl(null);
-    } else {
-      handleSend();
-    }
-  }}
->
-
+                  type="button"
+                  aria-label="Send"
+                  onClick={() => {
+                    if (selectedFile) {
+                      handleSend(selectedFile);
+                      setSelectedFile(null);
+                      setPreviewUrl(null);
+                    } else {
+                      handleSend();
+                    }
+                  }}
+                  className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-r from-pink-500 to-red-600 text-white flex items-center justify-center shadow-md hover:shadow-lg active:scale-95 transition"
+                >
                   {uploadingFile ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (

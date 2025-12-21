@@ -32,7 +32,7 @@ export default function Hero2() {
 
   const handleGoogleSignInWithGender = async (gender: 'male' | 'female') => {
     try {
-      await signInWithGoogle(gender);
+      
       router.push('/dashboard');
       setShowLoginDialog(false);
     } catch (error: any) {
@@ -42,7 +42,7 @@ export default function Hero2() {
   const handleProfileSetupSubmit = async (gender: 'male' | 'female') => {
     try {
       // Complete the sign-up with the selected gender
-      await signInWithGoogle(gender);
+      
       setShowProfileSetup(false);
       setShowLoginDialog(false);
       router.push('/dashboard');

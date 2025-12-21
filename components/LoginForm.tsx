@@ -1,5 +1,6 @@
 "use client"
 import { FcGoogle } from "react-icons/fc";
+import { FaFacebook } from "react-icons/fa";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,16 +38,20 @@ const LoginForm = ({
 }: LoginFormProps) => {
   const [showGenderModal, setShowGenderModal] = useState(false);
   const [selectedGender, setSelectedGender] = useState<'male' | 'female' | null>(null);
+  const [lastProvider, setLastProvider] = useState<'google' | 'facebook'>('google');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, signInWithGoogle } = useAuth();
+  const { login, signInWithGoogle, signInWithFacebook } = useAuth();
   const router = useRouter();
 
   const handleGenderSelect = (gender: 'male' | 'female') => {
     setSelectedGender(gender);
     setShowGenderModal(false);
-    // Retry Google sign-in with selected gender
-    if (gender) {
+    if (!gender) return;
+
+    if (lastProvider === 'facebook') {
+      handleFacebookSignInWithGender(gender);
+    } else {
       handleGoogleSignInWithGender(gender);
     }
   };
@@ -64,7 +69,7 @@ const LoginForm = ({
 
   const handleGoogleSignInWithGender = async (gender: 'male' | 'female') => {
     try {
-      await signInWithGoogle(gender);
+      await signInWithGoogle({ role: gender });
       router.push('/dashboard');
     } catch (error: any) {
       // If backend says user needs gender, show modal
@@ -76,14 +81,28 @@ const LoginForm = ({
     }
   };
 
+  const handleFacebookSignInWithGender = async (gender: 'male' | 'female') => {
+    try {
+      await signInWithFacebook({ role: gender });
+      router.push('/dashboard');
+    } catch (error: any) {
+      if (error?.requiresGender || error?.response?.data?.requiresGender) {
+        setShowGenderModal(true);
+      } else {
+        console.error('Facebook sign-in failed:', error);
+      }
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     try {
+      setLastProvider('google');
       // Try to sign in without gender first
-      const result = await signInWithGoogle();
+      await signInWithGoogle();
       router.push('/dashboard');
     } catch (error: any) {
       // If backend says user needs gender, show modal
-      if (error.response?.data?.requiresGender || 
+      if (error?.requiresGender || error.response?.data?.requiresGender || 
           error.response?.data?.message?.includes('Gender') || 
           error.response?.data?.message?.includes('gender') ||
           (error.response?.status === 400 && error.response?.data?.message?.includes('required'))) {
@@ -93,6 +112,21 @@ const LoginForm = ({
       }
     }
   };
+
+  const handleFacebookSignIn = async () => {
+    try {
+      setLastProvider('facebook');
+      await signInWithFacebook();
+      router.push('/dashboard');
+    } catch (error: any) {
+      if (error?.requiresGender || error?.response?.data?.requiresGender) {
+        setShowGenderModal(true);
+      } else {
+        console.error('Facebook sign-in failed:', error);
+      }
+    }
+  };
+
   return (
     <section className=" w-full h-screen bg-[#5940df] ">
       <div className="flex h-full items-center justify-center">
@@ -143,6 +177,10 @@ const LoginForm = ({
                 <Button type="button" onClick={handleGoogleSignIn} className="w-full text-red-500 border-[1px] border-black rounded-md">
                   <FcGoogle className="mr-2 size-5" />
                   {googleText}
+                </Button>
+                <Button type="button" onClick={handleFacebookSignIn} className="w-full bg-[#1877f2] hover:bg-[#166fe5] text-white border-[1px] border-black rounded-md">
+                  <FaFacebook className="mr-2 size-5" />
+                  Sign in with Facebook
                 </Button>
               </div>
             </div>

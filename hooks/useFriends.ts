@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 export interface Friend {
   user: {
@@ -85,7 +86,7 @@ export function useFriends() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         await fetchOppositeUsers();
-        alert("✅ Friend request sent!");
+        toast.success("✅ Friend request sent!");
       } catch (err) {
         console.error("❌ Error sending friend request:", err);
       }

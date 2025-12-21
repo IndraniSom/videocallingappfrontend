@@ -1,6 +1,6 @@
 // lib/firebase.ts
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -15,6 +15,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+export const facebookProvider = new FacebookAuthProvider();
+
+googleProvider.addScope('https://www.googleapis.com/auth/user.birthday.read');
+googleProvider.addScope('https://www.googleapis.com/auth/user.gender.read');
 
 export default app;
 

@@ -1,11 +1,31 @@
 import axios from "axios";
 import { auth } from "./firebase";
 import { getIdToken } from "firebase/auth";
+import toast from "react-hot-toast";
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: { "Content-Type": "application/json" },
 });
+
+axiosInstance.interceptors.response.use(
+  (response) => {
+    const method = String(response?.config?.method || "").toLowerCase();
+    const msg = (response?.data as any)?.message;
+    if (msg && method && method !== "get") {
+      toast.success(String(msg));
+    }
+    return response;
+  },
+  (error) => {
+    const msg =
+      error?.response?.data?.message ||
+      error?.message ||
+      "Request failed";
+    toast.error(String(msg));
+    return Promise.reject(error);
+  }
+);
 
 // Add Firebase ID token to requests
 axiosInstance.interceptors.request.use(

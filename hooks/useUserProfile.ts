@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { signOut } from "firebase/auth";
+import { onIdTokenChanged, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import axiosInstance from "@/lib/axiosInstance";
 
@@ -11,12 +11,6 @@ export function useUserProfile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
     const fetchProfile = async () => {
       try {
         const res = await axiosInstance.get(`${API_URL}/auth/me`);
@@ -32,7 +26,29 @@ export function useUserProfile() {
       }
     };
 
-    fetchProfile();
+    const unsubscribe = onIdTokenChanged(auth, async (firebaseUser) => {
+      const token = localStorage.getItem("token");
+
+      if (!firebaseUser && !token) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      await fetchProfile();
+    });
+
+    // also run once on mount (covers the case where token exists but auth state is delayed)
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchProfile();
+    } else {
+      setLoading(false);
+    }
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const logout = async () => {

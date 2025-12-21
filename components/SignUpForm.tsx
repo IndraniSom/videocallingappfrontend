@@ -1,5 +1,6 @@
 "use client"
 import { FcGoogle } from "react-icons/fc";
+import { FaFacebook } from "react-icons/fa";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +42,7 @@ const Signup1 = ({
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const { signup, signInWithGoogle } = useAuth();
+  const { signup, signInWithGoogle, signInWithFacebook } = useAuth();
   const router = useRouter();
 
   const handleGenderSelect = (gender: 'male' | 'female') => {
@@ -79,7 +80,7 @@ const Signup1 = ({
       return;
     }
     try {
-      const result = await signInWithGoogle(selectedGender);
+      await signInWithGoogle({ role: selectedGender });
       if (selectedGender === 'female') {
         router.push('/video-verification');
       } else {
@@ -93,6 +94,29 @@ const Signup1 = ({
         setShowGenderModal(true);
       } else {
         console.error('Google sign-in failed:', error);
+      }
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    if (!selectedGender) {
+      setShowGenderModal(true);
+      return;
+    }
+    try {
+      await signInWithFacebook({ role: selectedGender });
+      if (selectedGender === 'female') {
+        router.push('/video-verification');
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (error: any) {
+      if (error?.requiresGender || error?.response?.data?.requiresGender || 
+          error.response?.data?.message?.includes('Gender') || 
+          error.response?.data?.message?.includes('gender')) {
+        setShowGenderModal(true);
+      } else {
+        console.error('Facebook sign-in failed:', error);
       }
     }
   };
@@ -161,6 +185,10 @@ const Signup1 = ({
                 <Button type="button" onClick={handleGoogleSignIn} className="w-full text-red-500 border-[1px] border-black rounded-md">
                   <FcGoogle className="mr-2 size-5" />
                   {googleText}
+                </Button>
+                <Button type="button" onClick={handleFacebookSignIn} className="w-full bg-[#1877f2] hover:bg-[#166fe5] text-white border-[1px] border-black rounded-md">
+                  <FaFacebook className="mr-2 size-5" />
+                  Sign up with Facebook
                 </Button>
               </div>
             </div>
